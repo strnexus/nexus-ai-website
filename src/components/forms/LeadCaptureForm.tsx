@@ -94,7 +94,7 @@ export default function LeadCaptureForm({
         </div>
         <h3 className="text-xl font-semibold text-green-900 mb-2">Thank You!</h3>
         <p className="text-green-700">
-          We've received your request. Our AI automation experts will contact you within 24 hours to discuss your project.
+          We&apos;ve received your request. Our AI automation experts will contact you within 24 hours to discuss your project.
         </p>
       </motion.div>
     )
@@ -261,7 +261,7 @@ export default function LeadCaptureForm({
         </motion.button>
 
         <p className="text-sm text-gray-500 text-center">
-          By submitting this form, you agree to our privacy policy. We'll never spam you or share your information.
+          By submitting this form, you agree to our privacy policy. We&apos;ll never spam you or share your information.
         </p>
       </form>
     </motion.div>

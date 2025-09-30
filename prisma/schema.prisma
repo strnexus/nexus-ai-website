@@ -1,0 +1,392 @@
+// Nexus AI Tools Database Schema
+// Comprehensive schema for AI tools discovery platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Core AI Tool model
+model AITool {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String?
+  description String
+  website     String
+  logo        String?
+  screenshot  String?
+  
+  // Status and metadata
+  status      ToolStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastVerified DateTime @default(now())
+  
+  // Relationships
+  categories     AIToolCategory[]
+  industries     AIToolIndustry[]
+  businessTypes  AIToolBusinessType[]
+  features       Feature[]
+  integrations   Integration[]
+  pricingTiers   PricingTier[]
+  sources        SourceEntry[]
+  reviews        Review[]
+  userFavorites  UserFavorite[]
+  
+  // JSON fields as strings (will parse in application)
+  useCases       String   @default("") // JSON array of use case strings
+  tags          String   @default("") // JSON array of tag strings
+  
+  // Scoring and quality
+  qualityScore      Float   @default(0)
+  smbRelevanceScore Float   @default(0)
+  popularityScore   Float?  
+  trendingScore     Float?
+  
+  // SEO and metadata
+  metaDescription String?
+  keywords        String   @default("") // JSON array of SEO keywords
+  
+  @@map("ai_tools")
+}
+
+// Categories taxonomy
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  icon        String?
+  color       String?
+  parentId    String?
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  
+  // Tools in this category
+  tools       AIToolCategory[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("categories")
+}
+
+// Industries taxonomy
+model Industry {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique  
+  description String
+  icon        String?
+  keywords    String   @default("") // JSON array of industry keywords
+  
+  // Tools for this industry
+  tools       AIToolIndustry[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("industries")
+}
+
+// Business types (SMB segmentation)
+model BusinessType {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  slug          String   @unique
+  employeeRange String   // e.g., "1-10", "11-50", "51-200"
+  revenueRange  String?  // e.g., "<$1M", "$1M-$10M"
+  description   String
+  
+  // Tools for this business type
+  tools         AIToolBusinessType[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("business_types")
+}
+
+// Tool features
+model Feature {
+  id          String          @id @default(cuid())
+  toolId      String
+  tool        AITool         @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?
+  category    FeatureCategory @default(CORE_FUNCTIONALITY)
+  isCore      Boolean        @default(false)
+  availableIn String   @default("") // JSON array of pricing tiers
+  
+  createdAt   DateTime       @default(now())
+  
+  @@map("features")
+}
+
+// Tool integrations
+model Integration {
+  id          String          @id @default(cuid())
+  toolId      String
+  tool        AITool         @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  
+  name        String
+  type        IntegrationType @default(API)
+  category    String         // e.g., "CRM", "Email", "Analytics"
+  url         String?
+  description String?
+  isNative    Boolean        @default(false)
+  
+  createdAt   DateTime       @default(now())
+  
+  @@map("integrations")
+}
+
+// Pricing tiers
+model PricingTier {
+  id              String       @id @default(cuid())
+  toolId          String
+  tool            AITool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  
+  name            String      // e.g., "Free", "Pro", "Enterprise"
+  model           PricingModel @default(SUBSCRIPTION)
+  price           Float?
+  currency        String      @default("USD")
+  billingCycle    BillingCycle? @default(MONTHLY)
+  
+  // Pricing details
+  isFree          Boolean     @default(false)
+  hasFreeTrial    Boolean     @default(false)
+  trialDays       Int?
+  customPricing   Boolean     @default(false)
+  
+  // What's included (stored as JSON strings)
+  features        String   @default("") // JSON array of included features
+  limitations     String   @default("") // JSON array of limitations
+  
+  // Ordering and display
+  sortOrder       Int         @default(0)
+  isPopular       Boolean     @default(false)
+  isRecommended   Boolean     @default(false)
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@map("pricing_tiers")
+}
+
+// Source tracking
+model SourceEntry {
+  id          String          @id @default(cuid())
+  toolId      String
+  tool        AITool         @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  
+  source      DataSourceType
+  sourceId    String         // ID from the source system
+  sourceUrl   String?
+  confidence  Float          @default(0.5)
+  
+  status      SourceStatus   @default(ACTIVE)
+  lastSeen    DateTime       @default(now())
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  @@map("source_entries")
+}
+
+// User reviews and ratings
+model Review {
+  id          String   @id @default(cuid())
+  toolId      String
+  tool        AITool  @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  
+  // Review content
+  title       String?
+  content     String
+  rating      Int      // 1-5 stars
+  
+  // Review metadata
+  authorName  String?
+  authorEmail String?
+  isVerified  Boolean  @default(false)
+  isPublished Boolean @default(false)
+  
+  // Helpful voting
+  helpfulVotes Int     @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("reviews")
+}
+
+// User management for the application
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  company     String?
+  role        UserRole @default(USER)
+  
+  // Authentication
+  hashedPassword String?
+  emailVerified  DateTime?
+  
+  // Profile
+  avatar      String?
+  bio         String?
+  
+  // Settings and preferences
+  preferences Json?    // Store user preferences as JSON
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastLogin   DateTime?
+  
+  // Relationships
+  sessions    Session[]
+  favorites   UserFavorite[]
+  
+  @@map("users")
+}
+
+// User sessions
+model Session {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  sessionToken String  @unique
+  expires     DateTime
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("sessions")
+}
+
+// User favorites
+model UserFavorite {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId  String
+  tool    AITool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, toolId])
+  @@map("user_favorites")
+}
+
+// Junction tables for many-to-many relationships
+model AIToolCategory {
+  toolId     String
+  tool       AITool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  isPrimary  Boolean  @default(false) // Is this the primary category?
+  createdAt  DateTime @default(now())
+  
+  @@id([toolId, categoryId])
+  @@map("ai_tool_categories")
+}
+
+model AIToolIndustry {
+  toolId     String
+  tool       AITool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  industryId String
+  industry   Industry @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  
+  relevanceScore Float? // How relevant is this tool for this industry
+  createdAt      DateTime @default(now())
+  
+  @@id([toolId, industryId])
+  @@map("ai_tool_industries")
+}
+
+model AIToolBusinessType {
+  toolId         String
+  tool           AITool       @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  businessTypeId String
+  businessType   BusinessType @relation(fields: [businessTypeId], references: [id], onDelete: Cascade)
+  
+  suitabilityScore Float? // How suitable is this tool for this business type
+  createdAt        DateTime @default(now())
+  
+  @@id([toolId, businessTypeId])
+  @@map("ai_tool_business_types")
+}
+
+// Enums
+enum ToolStatus {
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+  PENDING
+  DRAFT
+}
+
+enum PricingModel {
+  FREE
+  FREEMIUM
+  SUBSCRIPTION
+  ONE_TIME
+  USAGE_BASED
+  CUSTOM
+  CONTACT_SALES
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+  ONE_TIME
+  USAGE_BASED
+}
+
+enum FeatureCategory {
+  CORE_FUNCTIONALITY
+  INTEGRATION
+  ANALYTICS  
+  COLLABORATION
+  SECURITY
+  SUPPORT
+  CUSTOMIZATION
+}
+
+enum IntegrationType {
+  API
+  WEBHOOK
+  ZAPIER
+  NATIVE
+  PLUGIN
+  EXPORT_IMPORT
+}
+
+enum DataSourceType {
+  THERESANAIFORTHAT
+  PRODUCTHUNT
+  YC_COMPANIES
+  FUTURETOOLS
+  MANUAL_ENTRY
+  WEBSITE_ANALYSIS
+  USER_SUBMISSION
+}
+
+enum SourceStatus {
+  ACTIVE
+  REMOVED
+  UPDATED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}

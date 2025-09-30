@@ -1,0 +1,497 @@
+name: 🚨 Emergency Data Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      rollback_target:
+        description: 'What to rollback to'
+        type: choice
+        options:
+          - 'Previous PR commit'
+          - 'Specific commit'
+          - 'Last known good state'
+        required: true
+        default: 'Previous PR commit'
+      
+      commit_sha:
+        description: 'Specific commit SHA (required if "Specific commit" selected)'
+        type: string
+        required: false
+        
+      pr_number:
+        description: 'PR number that caused issues (for reference)'
+        type: string
+        required: false
+        
+      reason:
+        description: 'Reason for rollback (required)'
+        type: string
+        required: true
+        
+      notification_level:
+        description: 'Notification urgency level'
+        type: choice
+        options:
+          - 'Critical'
+          - 'High'
+          - 'Medium'
+        default: 'Critical'
+        
+      skip_validation:
+        description: 'Skip validation checks (emergency only)'
+        type: boolean
+        default: false
+
+env:
+  EMERGENCY_MODE: true
+
+jobs:
+  # Pre-rollback validation and safety checks
+  validate:
+    name: 🔍 Pre-Rollback Validation
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_validation }}
+    outputs:
+      validation-passed: ${{ steps.validate.outputs.passed }}
+      rollback-safe: ${{ steps.safety.outputs.safe }}
+      target-commit: ${{ steps.target.outputs.commit }}
+      
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50  # Get enough history for rollback analysis
+          
+      - name: 🎯 Determine rollback target
+        id: target
+        run: |
+          echo "🎯 Determining rollback target..."
+          
+          case "${{ inputs.rollback_target }}" in
+            "Previous PR commit")
+              # Find the last merge commit before the problematic PR
+              if [ -n "${{ inputs.pr_number }}" ]; then
+                # Try to find the merge commit for the PR
+                MERGE_COMMIT=$(git log --oneline --grep="Merge pull request #${{ inputs.pr_number }}" -n 1 --format="%H")
+                if [ -n "$MERGE_COMMIT" ]; then
+                  TARGET_COMMIT=$(git rev-parse "$MERGE_COMMIT^1")
+                  echo "Found PR #${{ inputs.pr_number }} merge commit, targeting parent: $TARGET_COMMIT"
+                else
+                  # Fallback to previous commit
+                  TARGET_COMMIT=$(git rev-parse HEAD^1)
+                  echo "Could not find PR merge commit, using previous commit: $TARGET_COMMIT"
+                fi
+              else
+                TARGET_COMMIT=$(git rev-parse HEAD^1)
+                echo "No PR specified, using previous commit: $TARGET_COMMIT"
+              fi
+              ;;
+              
+            "Specific commit")
+              if [ -z "${{ inputs.commit_sha }}" ]; then
+                echo "❌ Specific commit SHA required but not provided"
+                exit 1
+              fi
+              
+              TARGET_COMMIT="${{ inputs.commit_sha }}"
+              
+              # Validate commit exists
+              if ! git cat-file -e "$TARGET_COMMIT" 2>/dev/null; then
+                echo "❌ Commit $TARGET_COMMIT does not exist"
+                exit 1
+              fi
+              
+              echo "Using specified commit: $TARGET_COMMIT"
+              ;;
+              
+            "Last known good state")
+              # Find the last commit that doesn't contain "data-refresh" 
+              TARGET_COMMIT=$(git log --oneline --invert-grep --grep="data-refresh" -n 1 --format="%H")
+              if [ -z "$TARGET_COMMIT" ]; then
+                echo "❌ Could not find last known good state"
+                exit 1
+              fi
+              echo "Found last known good state: $TARGET_COMMIT"
+              ;;
+              
+            *)
+              echo "❌ Invalid rollback target: ${{ inputs.rollback_target }}"
+              exit 1
+              ;;
+          esac
+          
+          # Validate target commit
+          if ! git cat-file -e "$TARGET_COMMIT" 2>/dev/null; then
+            echo "❌ Target commit $TARGET_COMMIT does not exist"
+            exit 1
+          fi
+          
+          echo "commit=$TARGET_COMMIT" >> $GITHUB_OUTPUT
+          
+          # Get commit details for confirmation
+          echo "📋 Target commit details:"
+          git show --no-patch --format="Commit: %H%nAuthor: %an <%ae>%nDate: %ad%nMessage: %s" "$TARGET_COMMIT"
+      
+      - name: 🔍 Validate rollback safety
+        id: safety
+        run: |
+          TARGET_COMMIT="${{ steps.target.outputs.commit }}"
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          
+          echo "🔍 Checking rollback safety..."
+          echo "Current: $CURRENT_COMMIT"
+          echo "Target:  $TARGET_COMMIT"
+          
+          # Check if we're actually rolling back (not rolling forward)
+          COMMITS_BEHIND=$(git rev-list --count "$TARGET_COMMIT..$CURRENT_COMMIT")
+          
+          if [ "$COMMITS_BEHIND" -eq 0 ]; then
+            echo "⚠️ Target commit is the same as current commit"
+            echo "safe=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          if [ "$COMMITS_BEHIND" -gt 10 ]; then
+            echo "⚠️ Rolling back $COMMITS_BEHIND commits - this is a significant rollback"
+            echo "Please confirm this is intentional"
+          fi
+          
+          # Check if target commit has data files
+          if ! git ls-tree -r "$TARGET_COMMIT" | grep -q "data/.*\.json"; then
+            echo "⚠️ Target commit does not contain data files"
+            echo "safe=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "✅ Rollback appears safe"
+          echo "safe=true" >> $GITHUB_OUTPUT
+          echo "commits-behind=$COMMITS_BEHIND" >> $GITHUB_OUTPUT
+      
+      - name: ✅ Validation Summary
+        id: validate
+        run: |
+          echo "📋 Validation Summary:"
+          echo "• Target commit: ${{ steps.target.outputs.commit }}"
+          echo "• Rollback safety: ${{ steps.safety.outputs.safe }}"
+          echo "• Commits to rollback: ${{ steps.safety.outputs.commits-behind }}"
+          
+          if [ "${{ steps.safety.outputs.safe }}" == "true" ]; then
+            echo "✅ All validation checks passed"
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Validation failed - rollback is not safe"
+            echo "passed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+  # Execute the rollback
+  rollback:
+    name: 🔄 Execute Rollback
+    runs-on: ubuntu-latest
+    needs: [validate]
+    if: always() && (needs.validate.result == 'success' || inputs.skip_validation)
+    outputs:
+      rollback-success: ${{ steps.rollback.outputs.success }}
+      rollback-commit: ${{ steps.rollback.outputs.commit }}
+      
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 50
+          
+      - name: 🔄 Execute rollback
+        id: rollback
+        run: |
+          # Determine target commit
+          if [ "${{ inputs.skip_validation }}" == "true" ]; then
+            # Re-calculate target if validation was skipped
+            case "${{ inputs.rollback_target }}" in
+              "Previous PR commit")
+                TARGET_COMMIT=$(git rev-parse HEAD^1)
+                ;;
+              "Specific commit")
+                TARGET_COMMIT="${{ inputs.commit_sha }}"
+                ;;
+              "Last known good state")
+                TARGET_COMMIT=$(git log --oneline --invert-grep --grep="data-refresh" -n 1 --format="%H")
+                ;;
+            esac
+          else
+            TARGET_COMMIT="${{ needs.validate.outputs.target-commit }}"
+          fi
+          
+          echo "🔄 Starting rollback to commit: $TARGET_COMMIT"
+          
+          # Configure git
+          git config user.name "nexus-emergency-bot[bot]"
+          git config user.email "nexus-emergency-bot[bot]@users.noreply.github.com"
+          
+          # Create emergency rollback branch
+          ROLLBACK_BRANCH="emergency-rollback/$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$ROLLBACK_BRANCH"
+          
+          # Rollback data files to target commit
+          echo "📂 Rolling back data files..."
+          
+          # Extract data files from target commit
+          git checkout "$TARGET_COMMIT" -- data/
+          
+          # Check if any changes were made
+          if git diff --quiet --staged; then
+            echo "⚠️ No changes detected - data may already be at target state"
+          else
+            echo "✅ Data files rolled back successfully"
+          fi
+          
+          # Create rollback commit
+          ROLLBACK_COMMIT_MSG="🚨 Emergency rollback to $TARGET_COMMIT
+          
+          Reason: ${{ inputs.reason }}
+          Rollback target: ${{ inputs.rollback_target }}
+          $([ -n "${{ inputs.pr_number }}" ] && echo "Related PR: #${{ inputs.pr_number }}")
+          Executed by: ${{ github.actor }}
+          Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          This is an emergency rollback and should be reviewed immediately.
+          
+          Co-authored-by: nexus-emergency-bot[bot] <nexus-emergency-bot[bot]@users.noreply.github.com>"
+          
+          git add data/
+          git commit -m "$ROLLBACK_COMMIT_MSG"
+          
+          # Push rollback branch
+          git push origin "$ROLLBACK_BRANCH"
+          
+          echo "success=true" >> $GITHUB_OUTPUT
+          echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "branch=$ROLLBACK_BRANCH" >> $GITHUB_OUTPUT
+          
+          echo "✅ Rollback executed successfully"
+          echo "🌟 Branch: $ROLLBACK_BRANCH"
+          echo "📋 Commit: $(git rev-parse HEAD)"
+      
+      - name: 🔀 Create Emergency PR
+        id: create-pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.rollback.outputs.branch }}
+          title: "🚨 EMERGENCY ROLLBACK: ${{ inputs.reason }}"
+          body: |
+            # 🚨 EMERGENCY DATA ROLLBACK
+            
+            **⚠️ This is an emergency rollback that requires immediate attention.**
+            
+            ## 📋 Rollback Details
+            
+            | Field | Value |
+            |-------|-------|
+            | **Reason** | ${{ inputs.reason }} |
+            | **Rollback Target** | ${{ inputs.rollback_target }} |
+            | **Target Commit** | ${{ needs.validate.outputs.target-commit || 'Calculated during rollback' }} |
+            | **Related PR** | ${{ inputs.pr_number && format('#{0}', inputs.pr_number) || 'N/A' }} |
+            | **Executed By** | ${{ github.actor }} |
+            | **Urgency Level** | ${{ inputs.notification_level }} |
+            | **Validation** | ${{ inputs.skip_validation && 'Skipped (Emergency)' || 'Completed' }} |
+            
+            ## 🚨 Immediate Actions Required
+            
+            1. **Review the rollback** - Verify data integrity
+            2. **Test critical functionality** - Ensure the platform is operational  
+            3. **Investigate root cause** - Determine what went wrong
+            4. **Approve and merge** - If rollback looks correct
+            5. **Monitor closely** - Watch for any issues after merge
+            
+            ## ⚠️ Important Notes
+            
+            - This rollback was executed in emergency mode
+            - All data changes have been reverted to a previous state
+            - The platform may have lost recent data updates
+            - Users should be notified if this affects live functionality
+            
+            ## 📞 Escalation
+            
+            If this rollback was unexpected or unauthorized, please:
+            1. Do NOT merge this PR
+            2. Immediately contact the development team
+            3. Review the workflow run logs for details
+            
+            ---
+            🤖 *Generated by emergency rollback workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}*
+          labels: |
+            🚨 emergency
+            🔄 rollback
+            ⚡ critical
+            📋 review-required
+          reviewers: |
+            svetkars
+          assignees: |
+            svetkars
+          draft: false
+      
+      - name: 📊 Rollback Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🚨 Emergency Rollback Executed
+          
+          **Status**: ✅ Successful
+          
+          ### 📋 Details
+          - **Target**: ${{ inputs.rollback_target }}
+          - **Reason**: ${{ inputs.reason }}
+          - **PR Created**: #${{ steps.create-pr.outputs.pull-request-number }}
+          - **Branch**: ${{ steps.rollback.outputs.branch }}
+          
+          ### ⏭️ Next Steps
+          1. Review PR #${{ steps.create-pr.outputs.pull-request-number }} immediately
+          2. Verify data integrity
+          3. Approve and merge if correct
+          4. Investigate root cause
+          
+          ### 🔗 Links
+          - [Review PR](${{ steps.create-pr.outputs.pull-request-url }})
+          - [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          EOF
+
+  # Send notifications
+  notify:
+    name: 📢 Emergency Notifications
+    runs-on: ubuntu-latest
+    needs: [validate, rollback]
+    if: always()
+    
+    steps:
+      - name: 📊 Determine notification type
+        id: notification
+        run: |
+          if [ "${{ needs.rollback.result }}" == "success" ]; then
+            echo "type=success" >> $GITHUB_OUTPUT
+            echo "icon=✅" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+            echo "title=Emergency Rollback Completed Successfully" >> $GITHUB_OUTPUT
+          else
+            echo "type=failure" >> $GITHUB_OUTPUT
+            echo "icon=❌" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+            echo "title=Emergency Rollback Failed" >> $GITHUB_OUTPUT
+          fi
+          
+          # Set urgency color based on input
+          case "${{ inputs.notification_level }}" in
+            "Critical") echo "urgency_color=#FF0000" >> $GITHUB_OUTPUT ;;
+            "High") echo "urgency_color=#FF6600" >> $GITHUB_OUTPUT ;;
+            "Medium") echo "urgency_color=#FFCC00" >> $GITHUB_OUTPUT ;;
+          esac
+      
+      - name: 🚨 Critical Slack Notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          custom_payload: |
+            {
+              channel: "#critical-alerts",
+              attachments: [{
+                color: "${{ steps.notification.outputs.urgency_color }}",
+                blocks: [
+                  {
+                    type: "header",
+                    text: {
+                      type: "plain_text",
+                      text: "🚨 EMERGENCY ROLLBACK EXECUTED"
+                    }
+                  },
+                  {
+                    type: "section",
+                    fields: [
+                      {
+                        type: "mrkdwn",
+                        text: "*Status:*\n${{ steps.notification.outputs.icon }} ${{ steps.notification.outputs.title }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Urgency:*\n${{ inputs.notification_level }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Reason:*\n${{ inputs.reason }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Executed By:*\n${{ github.actor }}"
+                      }
+                    ]
+                  },
+                  {
+                    type: "section",
+                    fields: [
+                      {
+                        type: "mrkdwn",
+                        text: "*Rollback Target:*\n${{ inputs.rollback_target }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Related PR:*\n${{ inputs.pr_number && format('#{0}', inputs.pr_number) || 'N/A' }}"
+                      }
+                    ]
+                  },
+                  {
+                    type: "actions",
+                    elements: [
+                      {
+                        type: "button",
+                        text: {
+                          type: "plain_text",
+                          text: "🔍 View Workflow"
+                        },
+                        url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                      },
+                      ${{ needs.rollback.outputs.rollback-success == 'true' && format('{"type": "button", "text": {"type": "plain_text", "text": "📋 Review PR"}, "url": "{0}"}', needs.rollback.outputs.pr-url) || '' }}
+                    ]
+                  },
+                  {
+                    type: "context",
+                    elements: [
+                      {
+                        type: "mrkdwn",
+                        text: "⚠️ *This is an emergency rollback. Immediate review and action required.*"
+                      }
+                    ]
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Final status
+  status:
+    name: 📊 Rollback Status
+    runs-on: ubuntu-latest
+    needs: [validate, rollback, notify]
+    if: always()
+    
+    steps:
+      - name: 📊 Final Status
+        run: |
+          echo "🚨 Emergency Rollback Workflow Completed"
+          echo "==============================================="
+          echo "Validation: ${{ needs.validate.result || 'Skipped' }}"
+          echo "Rollback: ${{ needs.rollback.result }}"
+          echo "Notification: ${{ needs.notify.result }}"
+          echo "Reason: ${{ inputs.reason }}"
+          echo "Target: ${{ inputs.rollback_target }}"
+          echo "Executed by: ${{ github.actor }}"
+          echo "==============================================="
+          
+          if [ "${{ needs.rollback.result }}" == "success" ]; then
+            echo "✅ Emergency rollback completed successfully"
+            echo "⚠️  IMPORTANT: Review and approve the rollback PR immediately"
+            exit 0
+          else
+            echo "❌ Emergency rollback failed"
+            echo "🚨 CRITICAL: Manual intervention required immediately"
+            exit 1
+          fi

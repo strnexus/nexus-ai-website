@@ -1,0 +1,87 @@
+{
+  "name": "nexus-ai-tools-pipeline",
+  "version": "1.0.0",
+  "description": "Automated data refresh pipeline for Nexus AI tools database",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch index.ts",
+    "start": "node dist/index.js",
+    "refresh": "tsx index.ts refresh",
+    "refresh:dry": "tsx index.ts refresh --dry-run",
+    "refresh:verbose": "tsx index.ts refresh --verbose",
+    "validate": "tsx index.ts validate",
+    "validate:fix": "tsx index.ts validate --fix",
+    "validate-env": "tsx scripts/validate-environment.ts",
+    "generate-diff": "tsx scripts/generate-diff.ts",
+    "monitor": "tsx index.ts monitor",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "clean": "rimraf dist logs/*.log",
+    "docker:build": "docker build -t nexus-ai-pipeline .",
+    "docker:run": "docker run --env-file .env nexus-ai-pipeline",
+    "cron:setup": "node scripts/setup-cron.js"
+  },
+  "bin": {
+    "nexus-pipeline": "./dist/index.js"
+  },
+  "keywords": [
+    "ai",
+    "tools",
+    "data",
+    "pipeline",
+    "automation",
+    "smb",
+    "nexus"
+  ],
+  "author": "Nexus AI Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "commander": "^11.1.0",
+    "winston": "^3.11.0",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3",
+    "csv-parse": "^5.5.2",
+    "csv-stringify": "^6.4.4",
+    "cheerio": "^1.0.0-rc.12",
+    "puppeteer": "^21.5.2",
+    "js-yaml": "^4.1.0",
+    "lodash": "^4.17.21",
+    "date-fns": "^2.30.0",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "@types/pg": "^8.10.7",
+    "@types/lodash": "^4.14.201",
+    "@types/js-yaml": "^4.0.9",
+    "@types/uuid": "^9.0.6",
+    "@types/jest": "^29.5.8",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "eslint": "^8.54.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "tsx": "^4.4.0",
+    "typescript": "^5.2.2",
+    "rimraf": "^5.0.5",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nexus-agency/nexus-ai-website.git",
+    "directory": "scripts/data-pipeline"
+  },
+  "bugs": {
+    "url": "https://github.com/nexus-agency/nexus-ai-website/issues"
+  },
+  "homepage": "https://nexus-ai.com"
+}

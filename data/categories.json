@@ -1,0 +1,51 @@
+[
+  {
+    "id": "customer_service",
+    "name": "Customer Service & Support",
+    "slug": "customer-service",
+    "icon": "🎧",
+    "color": "#3B82F6"
+  },
+  {
+    "id": "operations",
+    "name": "Operations & Productivity",
+    "slug": "operations",
+    "icon": "⚡",
+    "color": "#10B981"
+  },
+  {
+    "id": "marketing",
+    "name": "Marketing & Content",
+    "slug": "marketing",
+    "icon": "📣",
+    "color": "#EF4444"
+  },
+  {
+    "id": "sales_crm",
+    "name": "Sales & CRM",
+    "slug": "sales-crm",
+    "icon": "📊",
+    "color": "#F59E0B"
+  },
+  {
+    "id": "hr",
+    "name": "Human Resources",
+    "slug": "human-resources",
+    "icon": "👥",
+    "color": "#06B6D4"
+  },
+  {
+    "id": "ecommerce",
+    "name": "E-commerce & Retail",
+    "slug": "ecommerce",
+    "icon": "🛒",
+    "color": "#F97316"
+  },
+  {
+    "id": "finance",
+    "name": "Finance & Accounting",
+    "slug": "finance",
+    "icon": "💰",
+    "color": "#8B5CF6"
+  }
+]

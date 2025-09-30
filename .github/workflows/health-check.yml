@@ -1,0 +1,493 @@
+name: 🏥 Daily Health Check
+
+on:
+  # Run daily health check at 6 AM UTC (before business hours)
+  schedule:
+    - cron: '0 6 * * *'
+  
+  # Allow manual health checks
+  workflow_dispatch:
+    inputs:
+      check_level:
+        description: 'Health check depth'
+        type: choice
+        options:
+          - 'quick'
+          - 'full'
+          - 'comprehensive'
+        default: 'full'
+      
+      notify_on_success:
+        description: 'Send notifications even if healthy'
+        type: boolean
+        default: false
+
+env:
+  NODE_ENV: production
+  LOG_LEVEL: info
+
+jobs:
+  # System Health Check
+  health-check:
+    name: 🔍 System Health Assessment
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      health-status: ${{ steps.health.outputs.status }}
+      health-score: ${{ steps.health.outputs.score }}
+      issues-count: ${{ steps.health.outputs.issues }}
+      circuit-state: ${{ steps.health.outputs.circuit-state }}
+      recommendations: ${{ steps.health.outputs.recommendations }}
+      
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'scripts/data-pipeline/package-lock.json'
+          
+      - name: 💾 Install dependencies
+        run: |
+          cd scripts/data-pipeline
+          npm ci --production=false
+          
+      - name: 🏥 Run comprehensive health check
+        id: health
+        env:
+          # API Keys for connectivity testing
+          THERESANAIFORTHAT_API_KEY: ${{ secrets.TAIFT_API_KEY }}
+          PRODUCTHUNT_CLIENT_ID: ${{ secrets.PH_CLIENT_ID }}
+          PRODUCTHUNT_CLIENT_SECRET: ${{ secrets.PH_CLIENT_SECRET }}
+          PRODUCTHUNT_ACCESS_TOKEN: ${{ secrets.PH_ACCESS_TOKEN }}
+          
+          # Database for connection testing
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          
+          # Notification services
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          
+        run: |
+          cd scripts/data-pipeline
+          
+          echo "🏥 Starting comprehensive health assessment..."
+          
+          # Determine check level
+          CHECK_LEVEL="${{ inputs.check_level || 'full' }}"
+          echo "🎯 Health check level: $CHECK_LEVEL"
+          
+          # Initialize health tracking
+          HEALTH_SCORE=100
+          ISSUES_COUNT=0
+          ISSUES_LIST=""
+          RECOMMENDATIONS_LIST=""
+          CIRCUIT_STATE="unknown"
+          
+          # Create health report file
+          echo "# 🏥 System Health Report" > health-report.md
+          echo "Generated: $(date -u)" >> health-report.md
+          echo "" >> health-report.md
+          
+          # 1. Circuit Breaker Status
+          echo "🔌 Checking circuit breaker status..."
+          if npx ts-node src/data-pipeline/scripts/safety-cli.ts circuit > circuit-status.log 2>&1; then
+            CIRCUIT_STATE=$(grep "State:" circuit-status.log | awk '{print $2}' || echo "CLOSED")
+            echo "✅ Circuit breaker state: $CIRCUIT_STATE"
+            
+            if [ "$CIRCUIT_STATE" = "OPEN" ]; then
+              HEALTH_SCORE=$((HEALTH_SCORE - 30))
+              ISSUES_COUNT=$((ISSUES_COUNT + 1))
+              ISSUES_LIST="$ISSUES_LIST; Circuit breaker is OPEN"
+              RECOMMENDATIONS_LIST="$RECOMMENDATIONS_LIST; Investigate and resolve circuit breaker issues"
+            fi
+          else
+            echo "⚠️ Could not check circuit breaker status"
+            HEALTH_SCORE=$((HEALTH_SCORE - 10))
+            ISSUES_COUNT=$((ISSUES_COUNT + 1))
+            ISSUES_LIST="$ISSUES_LIST; Circuit breaker status unknown"
+          fi
+          
+          # 2. Environment Configuration
+          echo "🔧 Validating environment configuration..."
+          if node ../validate-environment.js > env-check.log 2>&1; then
+            echo "✅ Environment configuration is valid"
+          else
+            echo "⚠️ Environment configuration issues detected"
+            HEALTH_SCORE=$((HEALTH_SCORE - 20))
+            ISSUES_COUNT=$((ISSUES_COUNT + 1))
+            ISSUES_LIST="$ISSUES_LIST; Environment configuration issues"
+            RECOMMENDATIONS_LIST="$RECOMMENDATIONS_LIST; Review and fix environment configuration"
+          fi
+          
+          # 3. API Connectivity (if full or comprehensive check)
+          if [ "$CHECK_LEVEL" != "quick" ]; then
+            echo "🌐 Testing API connectivity..."
+            
+            # Test TAIFT API
+            if [ -n "$THERESANAIFORTHAT_API_KEY" ]; then
+              if curl -s -f -H "Authorization: Bearer $THERESANAIFORTHAT_API_KEY" \
+                 "https://api.theresanaiforthat.com/v1/health" > /dev/null 2>&1; then
+                echo "✅ TAIFT API connectivity: OK"
+              else
+                echo "⚠️ TAIFT API connectivity: Failed"
+                HEALTH_SCORE=$((HEALTH_SCORE - 15))
+                ISSUES_COUNT=$((ISSUES_COUNT + 1))
+                ISSUES_LIST="$ISSUES_LIST; TAIFT API connectivity issues"
+              fi
+            fi
+            
+            # Test Slack webhook
+            if [ -n "$SLACK_WEBHOOK" ]; then
+              if curl -s -f -X POST "$SLACK_WEBHOOK" \
+                 -H "Content-Type: application/json" \
+                 -d '{"text":"Health check test - ignore this message"}' > /dev/null 2>&1; then
+                echo "✅ Slack webhook connectivity: OK"
+              else
+                echo "⚠️ Slack webhook connectivity: Failed"
+                HEALTH_SCORE=$((HEALTH_SCORE - 10))
+                ISSUES_COUNT=$((ISSUES_COUNT + 1))
+                ISSUES_LIST="$ISSUES_LIST; Slack webhook connectivity issues"
+              fi
+            fi
+          fi
+          
+          # 4. Data Integrity Check
+          echo "📊 Checking data integrity..."
+          if [ -f "../../data/ai-tools.json" ]; then
+            TOOL_COUNT=$(jq length ../../data/ai-tools.json 2>/dev/null || echo 0)
+            if [ "$TOOL_COUNT" -gt 100 ]; then
+              echo "✅ Data integrity: $TOOL_COUNT tools found"
+            elif [ "$TOOL_COUNT" -gt 0 ]; then
+              echo "⚠️ Data integrity: Low tool count ($TOOL_COUNT)"
+              HEALTH_SCORE=$((HEALTH_SCORE - 10))
+              ISSUES_COUNT=$((ISSUES_COUNT + 1))
+              ISSUES_LIST="$ISSUES_LIST; Low data volume ($TOOL_COUNT tools)"
+            else
+              echo "❌ Data integrity: No tools found"
+              HEALTH_SCORE=$((HEALTH_SCORE - 25))
+              ISSUES_COUNT=$((ISSUES_COUNT + 1))
+              ISSUES_LIST="$ISSUES_LIST; No data found"
+              RECOMMENDATIONS_LIST="$RECOMMENDATIONS_LIST; Run data pipeline to populate initial data"
+            fi
+          else
+            echo "❌ Data file not found"
+            HEALTH_SCORE=$((HEALTH_SCORE - 20))
+            ISSUES_COUNT=$((ISSUES_COUNT + 1))
+            ISSUES_LIST="$ISSUES_LIST; Data file missing"
+            RECOMMENDATIONS_LIST="$RECOMMENDATIONS_LIST; Initialize data file with pipeline run"
+          fi
+          
+          # 5. Recent Pipeline Activity (comprehensive check)
+          if [ "$CHECK_LEVEL" = "comprehensive" ]; then
+            echo "📈 Checking recent pipeline activity..."
+            
+            # Check for recent workflow runs
+            RECENT_RUNS=$(gh run list --workflow="data-refresh.yml" --limit 5 --json status,conclusion,createdAt 2>/dev/null || echo "[]")
+            if [ "$RECENT_RUNS" != "[]" ]; then
+              FAILED_RECENT=$(echo "$RECENT_RUNS" | jq '[.[] | select(.conclusion == "failure")] | length')
+              if [ "$FAILED_RECENT" -gt 2 ]; then
+                echo "⚠️ Multiple recent pipeline failures detected"
+                HEALTH_SCORE=$((HEALTH_SCORE - 15))
+                ISSUES_COUNT=$((ISSUES_COUNT + 1))
+                ISSUES_LIST="$ISSUES_LIST; Multiple recent pipeline failures"
+                RECOMMENDATIONS_LIST="$RECOMMENDATIONS_LIST; Investigate recent pipeline failures"
+              fi
+            fi
+          fi
+          
+          # 6. Safety System Check
+          echo "🛡️ Testing safety systems..."
+          if npx ts-node src/data-pipeline/scripts/safety-cli.ts check --quick > safety-check.log 2>&1; then
+            echo "✅ Safety systems operational"
+          else
+            echo "⚠️ Safety system issues detected"
+            HEALTH_SCORE=$((HEALTH_SCORE - 20))
+            ISSUES_COUNT=$((ISSUES_COUNT + 1))
+            ISSUES_LIST="$ISSUES_LIST; Safety system issues"
+            RECOMMENDATIONS_LIST="$RECOMMENDATIONS_LIST; Review safety system configuration"
+          fi
+          
+          # Determine overall health status
+          if [ $HEALTH_SCORE -ge 90 ]; then
+            HEALTH_STATUS="healthy"
+            STATUS_EMOJI="🟢"
+          elif [ $HEALTH_SCORE -ge 70 ]; then
+            HEALTH_STATUS="warning"  
+            STATUS_EMOJI="🟡"
+          elif [ $HEALTH_SCORE -ge 50 ]; then
+            HEALTH_STATUS="degraded"
+            STATUS_EMOJI="🟠"
+          else
+            HEALTH_STATUS="critical"
+            STATUS_EMOJI="🔴"
+          fi
+          
+          # Generate health report
+          cat >> health-report.md << EOF
+          ## $STATUS_EMOJI Overall Status: $(echo $HEALTH_STATUS | tr '[:lower:]' '[:upper:]')
+          
+          **Health Score:** ${HEALTH_SCORE}/100
+          **Issues Found:** $ISSUES_COUNT
+          **Circuit Breaker:** $CIRCUIT_STATE
+          
+          ### 📊 System Metrics
+          - **Environment:** Valid configuration
+          - **Data Volume:** $TOOL_COUNT tools
+          - **Circuit State:** $CIRCUIT_STATE
+          - **Check Level:** $CHECK_LEVEL
+          
+          EOF
+          
+          if [ $ISSUES_COUNT -gt 0 ]; then
+            echo "### ⚠️ Issues Detected" >> health-report.md
+            echo "$ISSUES_LIST" | tr ';' '\n' | sed 's/^/- /' >> health-report.md
+            echo "" >> health-report.md
+          fi
+          
+          if [ -n "$RECOMMENDATIONS_LIST" ]; then
+            echo "### 💡 Recommendations" >> health-report.md
+            echo "$RECOMMENDATIONS_LIST" | tr ';' '\n' | sed 's/^/- /' >> health-report.md
+            echo "" >> health-report.md
+          fi
+          
+          # Set outputs
+          echo "status=$HEALTH_STATUS" >> $GITHUB_OUTPUT
+          echo "score=$HEALTH_SCORE" >> $GITHUB_OUTPUT
+          echo "issues=$ISSUES_COUNT" >> $GITHUB_OUTPUT
+          echo "circuit-state=$CIRCUIT_STATE" >> $GITHUB_OUTPUT
+          echo "recommendations=$RECOMMENDATIONS_LIST" >> $GITHUB_OUTPUT
+          
+          # Create step summary
+          cat health-report.md >> $GITHUB_STEP_SUMMARY
+          
+          echo "🏁 Health check completed: $HEALTH_STATUS ($HEALTH_SCORE/100)"
+          
+      - name: 📤 Upload health report
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-report-${{ github.run_id }}
+          path: |
+            scripts/data-pipeline/health-report.md
+            scripts/data-pipeline/*.log
+          retention-days: 30
+
+  # Notification Job
+  notify:
+    name: 📢 Health Notifications
+    runs-on: ubuntu-latest
+    needs: health-check
+    if: always()
+    
+    steps:
+      - name: 🔔 Determine notification urgency
+        id: urgency
+        run: |
+          HEALTH_STATUS="${{ needs.health-check.outputs.health-status }}"
+          HEALTH_SCORE="${{ needs.health-check.outputs.health-score }}"
+          ISSUES_COUNT="${{ needs.health-check.outputs.issues-count }}"
+          
+          case "$HEALTH_STATUS" in
+            "critical")
+              echo "level=critical" >> $GITHUB_OUTPUT
+              echo "color=#FF0000" >> $GITHUB_OUTPUT
+              echo "emoji=🚨" >> $GITHUB_OUTPUT
+              echo "should_notify=true" >> $GITHUB_OUTPUT
+              ;;
+            "degraded")
+              echo "level=high" >> $GITHUB_OUTPUT
+              echo "color=#FF6600" >> $GITHUB_OUTPUT
+              echo "emoji=🟠" >> $GITHUB_OUTPUT
+              echo "should_notify=true" >> $GITHUB_OUTPUT
+              ;;
+            "warning")
+              echo "level=medium" >> $GITHUB_OUTPUT
+              echo "color=#FFCC00" >> $GITHUB_OUTPUT
+              echo "emoji=🟡" >> $GITHUB_OUTPUT
+              echo "should_notify=true" >> $GITHUB_OUTPUT
+              ;;
+            "healthy")
+              echo "level=info" >> $GITHUB_OUTPUT
+              echo "color=#00FF00" >> $GITHUB_OUTPUT
+              echo "emoji=🟢" >> $GITHUB_OUTPUT
+              # Only notify on success if explicitly requested
+              if [ "${{ inputs.notify_on_success }}" = "true" ]; then
+                echo "should_notify=true" >> $GITHUB_OUTPUT
+              else
+                echo "should_notify=false" >> $GITHUB_OUTPUT
+              fi
+              ;;
+            *)
+              echo "level=unknown" >> $GITHUB_OUTPUT
+              echo "color=#808080" >> $GITHUB_OUTPUT
+              echo "emoji=❓" >> $GITHUB_OUTPUT
+              echo "should_notify=true" >> $GITHUB_OUTPUT
+              ;;
+          esac
+      
+      - name: 📱 Send Slack notification
+        if: steps.urgency.outputs.should_notify == 'true'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          custom_payload: |
+            {
+              channel: "#ai-pipeline-health",
+              attachments: [{
+                color: "${{ steps.urgency.outputs.color }}",
+                blocks: [
+                  {
+                    type: "header",
+                    text: {
+                      type: "plain_text",
+                      text: "${{ steps.urgency.outputs.emoji }} AI Pipeline Health Check"
+                    }
+                  },
+                  {
+                    type: "section",
+                    fields: [
+                      {
+                        type: "mrkdwn",
+                        text: "*Status:*\n${{ needs.health-check.outputs.health-status | upper }}"
+                      },
+                      {
+                        type: "mrkdwn", 
+                        text: "*Health Score:*\n${{ needs.health-check.outputs.health-score }}/100"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Issues Found:*\n${{ needs.health-check.outputs.issues-count }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Circuit State:*\n${{ needs.health-check.outputs.circuit-state }}"
+                      }
+                    ]
+                  },
+                  {
+                    type: "section",
+                    text: {
+                      type: "mrkdwn",
+                      text: "*Check Time:* $(date -u)\n*Trigger:* ${{ github.event_name }}"
+                    }
+                  },
+                  {
+                    type: "actions",
+                    elements: [
+                      {
+                        type: "button",
+                        text: {
+                          type: "plain_text",
+                          text: "📊 View Report"
+                        },
+                        url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                      },
+                      {
+                        type: "button",
+                        text: {
+                          type: "plain_text", 
+                          text: "🔧 Run Pipeline"
+                        },
+                        url: "${{ github.server_url }}/${{ github.repository }}/actions/workflows/data-refresh.yml"
+                      }
+                    ]
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Create issue for critical health problems
+  create-issue:
+    name: 🚨 Create Health Issue  
+    runs-on: ubuntu-latest
+    needs: health-check
+    if: needs.health-check.outputs.health-status == 'critical'
+    
+    steps:
+      - name: 📝 Create critical health issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const healthScore = ${{ needs.health-check.outputs.health-score }};
+            const issuesCount = ${{ needs.health-check.outputs.issues-count }};
+            const circuitState = '${{ needs.health-check.outputs.circuit-state }}';
+            const recommendations = '${{ needs.health-check.outputs.recommendations }}';
+            
+            const issueBody = `
+            # 🚨 Critical Health Alert
+            
+            The AI pipeline health check has detected critical issues that require immediate attention.
+            
+            ## 📊 Health Summary
+            - **Status:** CRITICAL
+            - **Health Score:** ${healthScore}/100
+            - **Issues Found:** ${issuesCount}  
+            - **Circuit Breaker State:** ${circuitState}
+            - **Check Time:** ${new Date().toISOString()}
+            
+            ## 🔗 Links
+            - [Health Check Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - [Emergency Rollback Workflow](${{ github.server_url }}/${{ github.repository }}/actions/workflows/emergency-rollback.yml)
+            - [Data Refresh Workflow](${{ github.server_url }}/${{ github.repository }}/actions/workflows/data-refresh.yml)
+            
+            ## 🚨 Immediate Actions Required
+            1. Review the health check workflow logs
+            2. Investigate circuit breaker status if OPEN
+            3. Check API connectivity and credentials  
+            4. Verify data integrity and volume
+            5. Consider emergency rollback if needed
+            
+            ${recommendations ? `## 💡 Recommendations\n${recommendations.split(';').map(r => `- ${r.trim()}`).join('\n')}` : ''}
+            
+            ## 🔧 Troubleshooting Commands
+            \`\`\`bash
+            # Check pipeline health
+            npm run pipeline:health
+            
+            # Run safety check
+            npm run pipeline:safety
+            
+            # Monitor pipeline status
+            npm run pipeline:monitor
+            
+            # Emergency stop (if needed)
+            npx ts-node src/data-pipeline/scripts/safety-cli.ts emergency-stop "Critical health issue"
+            \`\`\`
+            
+            ---
+            🤖 *This issue was automatically created by the health check workflow.*
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Critical Pipeline Health Alert',
+              body: issueBody,
+              labels: ['🚨 critical', '🏥 health', '🤖 automated'],
+              assignees: ['svetkars']
+            });
+
+  # Final status
+  status:
+    name: 📊 Health Check Summary
+    runs-on: ubuntu-latest 
+    needs: [health-check, notify, create-issue]
+    if: always()
+    
+    steps:
+      - name: 📊 Final status summary
+        run: |
+          echo "🏥 Health Check Workflow Completed"
+          echo "=================================="
+          echo "Health Status: ${{ needs.health-check.outputs.health-status }}"
+          echo "Health Score: ${{ needs.health-check.outputs.health-score }}/100"
+          echo "Issues Found: ${{ needs.health-check.outputs.issues-count }}"
+          echo "Circuit State: ${{ needs.health-check.outputs.circuit-state }}"
+          echo "Notification Sent: ${{ needs.notify.result }}"
+          echo "Issue Created: ${{ needs.create-issue.result }}"
+          echo "=================================="

@@ -1,0 +1,711 @@
+name: 🤖 Weekly AI Tools Data Refresh
+
+on:
+  # Run every Sunday at 2 AM UTC (optimal for low GitHub Actions usage)
+  schedule:
+    - cron: '0 2 * * 0'
+  
+  # Allow manual triggering for testing and emergency updates
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no data changes)'
+        type: boolean
+        default: false
+      source_filter:
+        description: 'Run specific source only (optional)'
+        type: choice
+        options:
+          - ''
+          - 'theresanaiforthat'
+          - 'producthunt' 
+          - 'ycombinator'
+          - 'futuretools'
+        default: ''
+      force_pr:
+        description: 'Create PR even if no changes detected'
+        type: boolean
+        default: false
+
+env:
+  NODE_ENV: production
+  LOG_LEVEL: info
+  PIPELINE_TIMEOUT: 2700  # 45 minutes
+  
+jobs:
+  # Job 1: Environment setup and validation
+  setup:
+    name: 🔧 Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.npm-cache.outputs.cache-hit }}
+      node-version: ${{ steps.node-setup.outputs.node-version }}
+      pipeline-config: ${{ steps.config.outputs.config }}
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need previous commit for diff generation
+      
+      - name: 📦 Setup Node.js
+        id: node-setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'scripts/data-pipeline/package-lock.json'
+      
+      - name: 💾 Cache npm dependencies
+        id: npm-cache
+        uses: actions/cache@v3
+        with:
+          path: scripts/data-pipeline/node_modules
+          key: npm-${{ hashFiles('scripts/data-pipeline/package-lock.json') }}
+          restore-keys: npm-
+      
+      - name: 📦 Install dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: |
+          cd scripts/data-pipeline
+          npm ci --production=false
+      
+      - name: ✅ Validate environment
+        id: validate-env
+        run: |
+          cd scripts/data-pipeline
+          
+          # Check required environment variables
+          echo "🔍 Validating environment variables..."
+          
+          if [ -z "${{ secrets.TAIFT_API_KEY }}" ]; then
+            echo "❌ TAIFT_API_KEY secret not configured"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "❌ DATABASE_URL secret not configured"  
+            exit 1
+          fi
+          
+          # Validate Node.js and npm versions
+          echo "📋 Node.js version: $(node --version)"
+          echo "📋 NPM version: $(npm --version)"
+          
+          # Test pipeline CLI
+          if ! npm run --silent validate-env; then
+            echo "❌ Pipeline environment validation failed"
+            exit 1
+          fi
+          
+          echo "✅ Environment validation completed successfully"
+      
+      - name: 🔧 Generate pipeline configuration
+        id: config
+        run: |
+          cd scripts/data-pipeline
+          
+          # Create runtime configuration
+          cat > runtime-config.json << EOF
+          {
+            "dryRun": ${{ inputs.dry_run || 'false' }},
+            "sourceFilter": "${{ inputs.source_filter }}",
+            "forcePR": ${{ inputs.force_pr || 'false' }},
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workflow": {
+              "runId": "${{ github.run_id }}",
+              "runNumber": "${{ github.run_number }}",
+              "actor": "${{ github.actor }}",
+              "triggeredBy": "${{ github.event_name }}"
+            }
+          }
+          EOF
+          
+          # Output configuration for next jobs
+          echo "config=$(cat runtime-config.json | jq -c .)" >> $GITHUB_OUTPUT
+          
+          echo "✅ Pipeline configuration generated"
+
+  # Job 2: Execute the data pipeline
+  pipeline:
+    name: 🔄 Execute Data Pipeline
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 45
+    outputs:
+      changes-detected: ${{ steps.pipeline.outputs.changes-detected }}
+      tools-processed: ${{ steps.pipeline.outputs.tools-processed }}
+      new-tools: ${{ steps.pipeline.outputs.new-tools }}
+      updated-tools: ${{ steps.pipeline.outputs.updated-tools }}
+      quality-flags: ${{ steps.pipeline.outputs.quality-flags }}
+      execution-time: ${{ steps.pipeline.outputs.execution-time }}
+      pipeline-status: ${{ steps.pipeline.outputs.status }}
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'scripts/data-pipeline/package-lock.json'
+      
+      - name: 💾 Restore npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: scripts/data-pipeline/node_modules
+          key: npm-${{ hashFiles('scripts/data-pipeline/package-lock.json') }}
+          restore-keys: npm-
+      
+      - name: 📦 Install dependencies (if cache miss)
+        run: |
+          cd scripts/data-pipeline
+          if [ ! -d "node_modules" ]; then
+            npm ci --production=false
+          fi
+      
+      - name: 🛡️ Pre-flight safety check
+        id: safety-check
+        run: |
+          cd scripts/data-pipeline
+          
+          echo "🛡️ Running pre-flight safety checks..."
+          
+          # Check circuit breaker status and system health
+          npx ts-node src/data-pipeline/scripts/safety-cli.ts health --verbose > health-check.log 2>&1
+          HEALTH_EXIT_CODE=$?
+          
+          if [ $HEALTH_EXIT_CODE -ne 0 ]; then
+            echo "⚠️ Pre-flight health check detected issues:"
+            cat health-check.log
+            
+            # Check if it's a circuit breaker blocking execution
+            if grep -q "Circuit breaker is OPEN\|Circuit State: OPEN" health-check.log; then
+              echo "🚨 Circuit breaker is open - pipeline execution blocked"
+              echo "circuit-blocked=true" >> $GITHUB_OUTPUT
+              exit 1
+            else
+              echo "⚠️ Health issues detected but not blocking"
+              echo "health-warning=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✅ Pre-flight checks passed"
+            echo "health-warning=false" >> $GITHUB_OUTPUT
+            echo "circuit-blocked=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: 🏃 Execute data pipeline with safety
+        id: pipeline
+        if: steps.safety-check.outputs.circuit-blocked != 'true'
+        env:
+          # API Keys
+          THERESANAIFORTHAT_API_KEY: ${{ secrets.TAIFT_API_KEY }}
+          PRODUCTHUNT_CLIENT_ID: ${{ secrets.PH_CLIENT_ID }}
+          PRODUCTHUNT_CLIENT_SECRET: ${{ secrets.PH_CLIENT_SECRET }}
+          PRODUCTHUNT_ACCESS_TOKEN: ${{ secrets.PH_ACCESS_TOKEN }}
+          
+          # Database
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          
+          # Pipeline Configuration
+          PIPELINE_DRY_RUN: ${{ fromJson(needs.setup.outputs.pipeline-config).dryRun }}
+          SOURCE_FILTER: ${{ fromJson(needs.setup.outputs.pipeline-config).sourceFilter }}
+          
+          # Performance Settings
+          CONCURRENT_REQUESTS_LIMIT: 5
+          REQUEST_TIMEOUT_MS: 30000
+          RETRY_MAX_ATTEMPTS: 3
+          
+          # Quality Settings
+          QUALITY_MINIMUM_SCORE: 60
+          SMB_RELEVANCE_THRESHOLD: 40
+          DEDUPLICATION_ENABLED: true
+          
+        run: |
+          cd scripts/data-pipeline
+          
+          echo "🚀 Starting data pipeline execution..."
+          echo "📊 Configuration:"
+          echo "  - Dry Run: $PIPELINE_DRY_RUN"
+          echo "  - Source Filter: ${SOURCE_FILTER:-'all sources'}"
+          echo "  - Workflow Run: ${{ github.run_id }}"
+          
+          # Create output directory
+          mkdir -p output
+          
+          # Execute pipeline with JSON output for parsing
+          START_TIME=$(date +%s)
+          
+          set +e  # Don't exit on pipeline failure, we want to capture the results
+          
+          if [ "$PIPELINE_DRY_RUN" == "true" ]; then
+            npm run refresh -- --dry-run --output-format=json --output-file=output/pipeline-results.json --source="${SOURCE_FILTER}"
+          else
+            npm run refresh -- --output-format=json --output-file=output/pipeline-results.json --source="${SOURCE_FILTER}"
+          fi
+          
+          PIPELINE_EXIT_CODE=$?
+          END_TIME=$(date +%s)
+          EXECUTION_TIME=$((END_TIME - START_TIME))
+          
+          echo "⏱️ Pipeline execution completed in ${EXECUTION_TIME} seconds"
+          
+          # Parse results and run safety validation if pipeline succeeded
+          if [ $PIPELINE_EXIT_CODE -eq 0 ] && [ -f output/pipeline-results.json ]; then
+            echo "✅ Pipeline executed successfully"
+            
+            # Run post-pipeline safety validation
+            echo "🛡️ Running post-pipeline safety validation..."
+            npx ts-node src/data-pipeline/scripts/safety-cli.ts check --quick 2>&1 | tee safety-validation.log
+            SAFETY_EXIT_CODE=$?
+            
+            if [ $SAFETY_EXIT_CODE -ne 0 ]; then
+              echo "⚠️ Post-pipeline safety validation failed:"
+              cat safety-validation.log
+              
+              # Check if it's a critical safety violation
+              if grep -q "CRITICAL\|BLOCK DEPLOYMENT" safety-validation.log; then
+                echo "🚨 Critical safety violation - blocking deployment"
+                echo "status=safety-blocked" >> $GITHUB_OUTPUT
+                exit 1
+              else
+                echo "⚠️ Safety warnings detected but allowing deployment"
+                echo "safety-warnings=true" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "✅ Post-pipeline safety validation passed"
+              echo "safety-warnings=false" >> $GITHUB_OUTPUT
+            fi
+            
+            # Extract metrics from results
+            TOOLS_PROCESSED=$(jq -r '.toolsProcessed // 0' output/pipeline-results.json)
+            NEW_TOOLS=$(jq -r '.newTools // 0' output/pipeline-results.json)
+            UPDATED_TOOLS=$(jq -r '.updatedTools // 0' output/pipeline-results.json)
+            QUALITY_FLAGS=$(jq -r '.qualityFlags // 0' output/pipeline-results.json)
+            
+            # Determine if changes were detected
+            if [ $NEW_TOOLS -gt 0 ] || [ $UPDATED_TOOLS -gt 0 ]; then
+              CHANGES_DETECTED="true"
+              echo "📈 Changes detected: $NEW_TOOLS new tools, $UPDATED_TOOLS updated tools"
+            else
+              CHANGES_DETECTED="false"
+              echo "📊 No changes detected in this run"
+            fi
+            
+            # Set outputs
+            echo "changes-detected=$CHANGES_DETECTED" >> $GITHUB_OUTPUT
+            echo "tools-processed=$TOOLS_PROCESSED" >> $GITHUB_OUTPUT
+            echo "new-tools=$NEW_TOOLS" >> $GITHUB_OUTPUT
+            echo "updated-tools=$UPDATED_TOOLS" >> $GITHUB_OUTPUT
+            echo "quality-flags=$QUALITY_FLAGS" >> $GITHUB_OUTPUT
+            echo "execution-time=$EXECUTION_TIME" >> $GITHUB_OUTPUT
+            echo "status=success" >> $GITHUB_OUTPUT
+            
+            # Create summary for GitHub Actions UI
+            cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🤖 Data Pipeline Results
+          
+          | Metric | Value |
+          |--------|-------|
+          | ⏱️ Execution Time | ${EXECUTION_TIME}s |
+          | 📊 Tools Processed | $TOOLS_PROCESSED |
+          | ✨ New Tools | $NEW_TOOLS |
+          | 🔄 Updated Tools | $UPDATED_TOOLS |
+          | ⚠️ Quality Flags | $QUALITY_FLAGS |
+          | 📈 Changes Detected | $CHANGES_DETECTED |
+          | 🏃 Mode | ${PIPELINE_DRY_RUN:true:Dry Run:Production} |
+          EOF
+          
+          else
+            echo "❌ Pipeline execution failed with exit code $PIPELINE_EXIT_CODE"
+            
+            # Set failure outputs
+            echo "changes-detected=false" >> $GITHUB_OUTPUT
+            echo "tools-processed=0" >> $GITHUB_OUTPUT
+            echo "new-tools=0" >> $GITHUB_OUTPUT
+            echo "updated-tools=0" >> $GITHUB_OUTPUT
+            echo "quality-flags=0" >> $GITHUB_OUTPUT
+            echo "execution-time=$EXECUTION_TIME" >> $GITHUB_OUTPUT
+            echo "status=failed" >> $GITHUB_OUTPUT
+            
+            cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## ❌ Data Pipeline Failed
+          
+          The data pipeline execution failed after ${EXECUTION_TIME} seconds.
+          
+          Please check the logs above for error details.
+          EOF
+            
+            exit $PIPELINE_EXIT_CODE
+          fi
+      
+      - name: 📤 Upload pipeline results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-results-${{ github.run_id }}
+          path: |
+            scripts/data-pipeline/output/
+            scripts/data-pipeline/logs/
+          retention-days: 30
+      
+      - name: 📤 Upload raw data for diff generation
+        if: steps.pipeline.outputs.changes-detected == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-data-${{ github.run_id }}
+          path: scripts/data-pipeline/output/*.json
+          retention-days: 7
+
+  # Job 3: Generate diff report
+  diff:
+    name: 📊 Generate Diff Report
+    runs-on: ubuntu-latest
+    needs: [setup, pipeline]
+    if: needs.pipeline.outputs.changes-detected == 'true' || inputs.force_pr
+    outputs:
+      diff-summary: ${{ steps.diff.outputs.summary }}
+      
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'scripts/data-pipeline/package-lock.json'
+      
+      - name: 💾 Restore npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: scripts/data-pipeline/node_modules
+          key: npm-${{ hashFiles('scripts/data-pipeline/package-lock.json') }}
+      
+      - name: 📥 Download pipeline data
+        uses: actions/download-artifact@v4
+        with:
+          name: pipeline-data-${{ github.run_id }}
+          path: ./pipeline-output
+      
+      - name: 📊 Generate diff report
+        id: diff
+        run: |
+          cd scripts/data-pipeline
+          
+          echo "🔍 Generating diff report..."
+          
+          # Ensure we have the current data file for comparison
+          CURRENT_DATA_FILE="../../data/ai-tools.json"
+          NEW_DATA_FILE="../pipeline-output/ai-tools.json"
+          
+          if [ ! -f "$CURRENT_DATA_FILE" ]; then
+            echo "⚠️ No existing data file found, this appears to be the initial data load"
+            CURRENT_DATA_FILE="/dev/null"
+          fi
+          
+          if [ ! -f "$NEW_DATA_FILE" ]; then
+            echo "❌ No new data file found from pipeline execution"
+            exit 1
+          fi
+          
+          # Generate comprehensive diff report
+          npm run generate-diff -- \
+            --previous="$CURRENT_DATA_FILE" \
+            --current="$NEW_DATA_FILE" \
+            --format=markdown \
+            --output=./diff-report.md \
+            --include-stats \
+            --include-samples
+          
+          if [ -f "./diff-report.md" ]; then
+            echo "✅ Diff report generated successfully"
+            
+            # Extract summary for output
+            SUMMARY=$(head -n 10 diff-report.md | tail -n +3 | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g')
+            echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
+            
+            # Add to step summary
+            cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 📊 Data Changes Summary
+          
+          EOF
+            cat diff-report.md >> $GITHUB_STEP_SUMMARY
+            
+          else
+            echo "❌ Failed to generate diff report"
+            exit 1
+          fi
+      
+      - name: 📤 Upload diff report
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-report-${{ github.run_id }}
+          path: scripts/data-pipeline/diff-report.md
+          retention-days: 90  # Keep longer for audit trail
+
+  # Job 4: Create Pull Request
+  create-pr:
+    name: 🔀 Create Pull Request
+    runs-on: ubuntu-latest
+    needs: [setup, pipeline, diff]
+    if: |
+      always() && 
+      (needs.pipeline.outputs.changes-detected == 'true' || inputs.force_pr) &&
+      needs.pipeline.result == 'success'
+    outputs:
+      pr-number: ${{ steps.pr.outputs.pull-request-number }}
+      pr-url: ${{ steps.pr.outputs.pull-request-url }}
+      
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: 📥 Download pipeline data and diff report
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-${{ github.run_id }}"
+          merge-multiple: true
+          path: ./artifacts
+      
+      - name: 🔧 Prepare data update
+        id: prepare
+        run: |
+          echo "🔧 Preparing data files for commit..."
+          
+          # Create unique branch name
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          BRANCH_NAME="data-refresh/$TIMESTAMP"
+          echo "branch-name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          
+          # Configure git
+          git config user.name "nexus-data-bot[bot]"
+          git config user.email "nexus-data-bot[bot]@users.noreply.github.com"
+          
+          # Create and switch to new branch
+          git checkout -b "$BRANCH_NAME"
+          
+          # Copy updated data files
+          if [ -f "./artifacts/ai-tools.json" ]; then
+            cp "./artifacts/ai-tools.json" data/
+            echo "✅ Updated ai-tools.json"
+          fi
+          
+          # Copy any additional data files
+          if [ -d "./artifacts/" ]; then
+            find ./artifacts/ -name "*.json" -not -name "pipeline-results.json" -exec cp {} data/ \;
+          fi
+          
+          # Check if we have changes to commit
+          if git diff --quiet; then
+            echo "changes-to-commit=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No file changes detected for commit"
+          else
+            echo "changes-to-commit=true" >> $GITHUB_OUTPUT
+            echo "✅ Changes detected, ready for commit"
+            
+            # Show changes summary
+            echo "📊 Files changed:"
+            git diff --name-only
+          fi
+      
+      - name: 💾 Commit changes
+        if: steps.prepare.outputs.changes-to-commit == 'true'
+        run: |
+          # Add all changed data files
+          git add data/
+          
+          # Create comprehensive commit message
+          COMMIT_MSG="🤖 Weekly AI tools data refresh - $(date +%Y-%m-%d)
+          
+          📊 Pipeline Results:
+          • Tools processed: ${{ needs.pipeline.outputs.tools-processed }}
+          • New tools: ${{ needs.pipeline.outputs.new-tools }}
+          • Updated tools: ${{ needs.pipeline.outputs.updated-tools }}
+          • Quality flags: ${{ needs.pipeline.outputs.quality-flags }}
+          • Execution time: ${{ needs.pipeline.outputs.execution-time }}s
+          
+          🤖 Generated by: GitHub Actions
+          🔗 Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          Co-authored-by: nexus-data-bot[bot] <nexus-data-bot[bot]@users.noreply.github.com>"
+          
+          git commit -m "$COMMIT_MSG"
+          git push origin "${{ steps.prepare.outputs.branch-name }}"
+      
+      - name: 🔀 Create Pull Request
+        if: steps.prepare.outputs.changes-to-commit == 'true'
+        id: pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.prepare.outputs.branch-name }}
+          title: "🤖 Weekly AI Tools Data Refresh - $(date +'%Y-%m-%d')"
+          body-path: ./artifacts/diff-report.md
+          labels: |
+            🤖 automated
+            📊 data-refresh
+            📋 review-required
+          reviewers: |
+            svetkars
+          assignees: |
+            svetkars
+          draft: false
+          delete-branch: true
+      
+      - name: 📊 PR Creation Summary
+        if: steps.pr.outputs.pull-request-number
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🔀 Pull Request Created
+          
+          **PR #${{ steps.pr.outputs.pull-request-number }}** has been created successfully!
+          
+          🔗 **[View Pull Request](${{ steps.pr.outputs.pull-request-url }})**
+          
+          ### 📊 Summary
+          - **New Tools**: ${{ needs.pipeline.outputs.new-tools }}
+          - **Updated Tools**: ${{ needs.pipeline.outputs.updated-tools }}
+          - **Quality Flags**: ${{ needs.pipeline.outputs.quality-flags }}
+          - **Execution Time**: ${{ needs.pipeline.outputs.execution-time }}s
+          
+          ### ⏭️ Next Steps
+          1. Review the changes in the PR
+          2. Approve and merge if everything looks good
+          3. The updated data will be live after merge
+          EOF
+
+  # Job 5: Notifications
+  notify:
+    name: 📢 Send Notifications
+    runs-on: ubuntu-latest
+    needs: [setup, pipeline, diff, create-pr]
+    if: always()
+    
+    steps:
+      - name: 📊 Determine notification type
+        id: notification
+        run: |
+          if [ "${{ needs.pipeline.result }}" == "success" ] && [ "${{ needs.create-pr.result }}" == "success" ]; then
+            echo "type=success" >> $GITHUB_OUTPUT
+            echo "icon=✅" >> $GITHUB_OUTPUT
+            echo "title=Weekly Data Refresh Completed Successfully" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.pipeline.result }}" == "failure" ]; then
+            echo "type=failure" >> $GITHUB_OUTPUT
+            echo "icon=❌" >> $GITHUB_OUTPUT
+            echo "title=Weekly Data Refresh Failed" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.pipeline.outputs.changes-detected }}" == "false" ]; then
+            echo "type=no-changes" >> $GITHUB_OUTPUT
+            echo "icon=📊" >> $GITHUB_OUTPUT
+            echo "title=Weekly Data Refresh - No Changes Detected" >> $GITHUB_OUTPUT
+          else
+            echo "type=partial" >> $GITHUB_OUTPUT
+            echo "icon=⚠️" >> $GITHUB_OUTPUT
+            echo "title=Weekly Data Refresh - Partial Success" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: 📢 Slack Notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          custom_payload: |
+            {
+              attachments: [{
+                color: '${{ needs.pipeline.result == 'success' && needs.create-pr.result == 'success' && 'good' || needs.pipeline.result == 'failure' && 'danger' || 'warning' }}',
+                blocks: [
+                  {
+                    type: 'header',
+                    text: {
+                      type: 'plain_text',
+                      text: '${{ steps.notification.outputs.icon }} ${{ steps.notification.outputs.title }}'
+                    }
+                  },
+                  {
+                    type: 'section',
+                    fields: [
+                      {
+                        type: 'mrkdwn',
+                        text: '*🔢 Tools Processed:*\n${{ needs.pipeline.outputs.tools-processed || '0' }}'
+                      },
+                      {
+                        type: 'mrkdwn', 
+                        text: '*✨ New Tools:*\n${{ needs.pipeline.outputs.new-tools || '0' }}'
+                      },
+                      {
+                        type: 'mrkdwn',
+                        text: '*🔄 Updated Tools:*\n${{ needs.pipeline.outputs.updated-tools || '0' }}'
+                      },
+                      {
+                        type: 'mrkdwn',
+                        text: '*⚠️ Quality Flags:*\n${{ needs.pipeline.outputs.quality-flags || '0' }}'
+                      }
+                    ]
+                  },
+                  {
+                    type: 'section',
+                    fields: [
+                      {
+                        type: 'mrkdwn',
+                        text: '*⏱️ Execution Time:*\n${{ needs.pipeline.outputs.execution-time || '0' }}s'
+                      },
+                      {
+                        type: 'mrkdwn',
+                        text: '*🔀 Pull Request:*\n${{ needs.create-pr.outputs.pr-number && format('<{0}|#{1}>', needs.create-pr.outputs.pr-url, needs.create-pr.outputs.pr-number) || 'None created' }}'
+                      }
+                    ]
+                  },
+                  {
+                    type: 'actions',
+                    elements: [
+                      {
+                        type: 'button',
+                        text: {
+                          type: 'plain_text',
+                          text: 'View Workflow Run'
+                        },
+                        url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+                      }
+                      ${{ needs.create-pr.outputs.pr-url && format(', {{ "type": "button", "text": {{ "type": "plain_text", "text": "Review PR" }}, "url": "{0}" }}', needs.create-pr.outputs.pr-url) || '' }}
+                    ]
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Final cleanup job
+  cleanup:
+    name: 🧹 Cleanup
+    runs-on: ubuntu-latest
+    needs: [setup, pipeline, diff, create-pr, notify]
+    if: always()
+    
+    steps:
+      - name: 📊 Workflow Summary
+        run: |
+          echo "🏁 Workflow completed"
+          echo "📊 Pipeline Status: ${{ needs.pipeline.outputs.pipeline-status }}"
+          echo "🔄 Changes Detected: ${{ needs.pipeline.outputs.changes-detected }}"
+          echo "🔀 PR Created: ${{ needs.create-pr.outputs.pr-number && 'Yes' || 'No' }}"
+          
+          # Set workflow conclusion
+          if [ "${{ needs.pipeline.result }}" == "success" ]; then
+            echo "✅ Weekly data refresh completed successfully"
+            exit 0
+          else
+            echo "❌ Weekly data refresh encountered issues"
+            exit 1
+          fi

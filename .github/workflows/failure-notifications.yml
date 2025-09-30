@@ -1,0 +1,533 @@
+name: 🚨 Failure Notification System
+
+on:
+  workflow_run:
+    workflows:
+      - "🤖 Weekly AI Tools Data Refresh"
+      - "🚨 Emergency Data Rollback"
+      - "🏥 Daily Health Check"
+    types:
+      - completed
+    branches:
+      - main
+
+env:
+  NODE_ENV: production
+
+jobs:
+  # Analyze workflow failure
+  analyze-failure:
+    name: 🔍 Analyze Workflow Failure
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure'
+    outputs:
+      workflow-name: ${{ steps.analyze.outputs.workflow-name }}
+      failure-type: ${{ steps.analyze.outputs.failure-type }}
+      severity: ${{ steps.analyze.outputs.severity }}
+      auto-retry: ${{ steps.analyze.outputs.auto-retry }}
+      incident-id: ${{ steps.analyze.outputs.incident-id }}
+      
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: 🔍 Analyze failure details
+        id: analyze
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflowRun = context.payload.workflow_run;
+            const workflowName = workflowRun.name;
+            const runId = workflowRun.id;
+            const headSha = workflowRun.head_sha;
+            const conclusion = workflowRun.conclusion;
+            
+            console.log(`Analyzing failure for workflow: ${workflowName}`);
+            console.log(`Run ID: ${runId}, Conclusion: ${conclusion}`);
+            
+            // Determine failure type and severity based on workflow
+            let failureType = 'unknown';
+            let severity = 'medium';
+            let autoRetry = false;
+            
+            switch (workflowName) {
+              case '🤖 Weekly AI Tools Data Refresh':
+                failureType = 'pipeline_failure';
+                severity = 'high';
+                autoRetry = true;
+                break;
+                
+              case '🚨 Emergency Data Rollback':
+                failureType = 'rollback_failure';
+                severity = 'critical';
+                autoRetry = false;
+                break;
+                
+              case '🏥 Daily Health Check':
+                failureType = 'health_check_failure';
+                severity = 'medium';
+                autoRetry = true;
+                break;
+                
+              default:
+                failureType = 'unknown_workflow';
+                severity = 'low';
+                autoRetry = false;
+            }
+            
+            // Generate incident ID
+            const incidentId = `INC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${runId.toString().slice(-6)}`;
+            
+            // Try to get workflow logs for analysis
+            let logAnalysis = '';
+            try {
+              const logs = await github.rest.actions.downloadWorkflowRunLogs({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: runId
+              });
+              
+              // Basic log analysis - look for common error patterns
+              if (logs.data) {
+                const logContent = logs.data.toString();
+                if (logContent.includes('API key') || logContent.includes('authentication')) {
+                  logAnalysis = 'Authentication/API key issues detected';
+                  severity = 'high';
+                } else if (logContent.includes('timeout') || logContent.includes('network')) {
+                  logAnalysis = 'Network/timeout issues detected';
+                } else if (logContent.includes('safety') || logContent.includes('circuit breaker')) {
+                  logAnalysis = 'Safety system activated';
+                  autoRetry = false;
+                } else if (logContent.includes('database') || logContent.includes('connection')) {
+                  logAnalysis = 'Database connectivity issues detected';
+                  severity = 'high';
+                }
+              }
+            } catch (error) {
+              console.log('Could not analyze logs:', error.message);
+            }
+            
+            // Set outputs
+            core.setOutput('workflow-name', workflowName);
+            core.setOutput('failure-type', failureType);
+            core.setOutput('severity', severity);
+            core.setOutput('auto-retry', autoRetry);
+            core.setOutput('incident-id', incidentId);
+            core.setOutput('log-analysis', logAnalysis);
+            core.setOutput('run-id', runId);
+            core.setOutput('head-sha', headSha);
+            
+            console.log(`Analysis complete: ${failureType} (${severity}) - Auto retry: ${autoRetry}`);
+
+  # Send immediate notifications
+  notify-failure:
+    name: 📢 Send Failure Notifications
+    runs-on: ubuntu-latest
+    needs: analyze-failure
+    if: always() && needs.analyze-failure.result == 'success'
+    
+    steps:
+      - name: 🚨 Send critical Slack alert
+        if: needs.analyze-failure.outputs.severity == 'critical'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          custom_payload: |
+            {
+              channel: "#critical-alerts",
+              text: "🚨 CRITICAL WORKFLOW FAILURE",
+              attachments: [{
+                color: "#FF0000",
+                blocks: [
+                  {
+                    type: "header",
+                    text: {
+                      type: "plain_text",
+                      text: "🚨 CRITICAL WORKFLOW FAILURE"
+                    }
+                  },
+                  {
+                    type: "section",
+                    fields: [
+                      {
+                        type: "mrkdwn",
+                        text: "*Workflow:*\n${{ needs.analyze-failure.outputs.workflow-name }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Incident ID:*\n${{ needs.analyze-failure.outputs.incident-id }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Failure Type:*\n${{ needs.analyze-failure.outputs.failure-type }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Severity:*\n${{ needs.analyze-failure.outputs.severity | upper }}"
+                      }
+                    ]
+                  },
+                  {
+                    type: "section",
+                    text: {
+                      type: "mrkdwn",
+                      text: "*Time:* $(date -u)\n*Branch:* ${{ github.event.workflow_run.head_branch }}\n*Commit:* ${{ github.event.workflow_run.head_sha | slice 0 8 }}"
+                    }
+                  },
+                  {
+                    type: "actions",
+                    elements: [
+                      {
+                        type: "button",
+                        text: {
+                          type: "plain_text",
+                          text: "🔍 View Logs"
+                        },
+                        url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}"
+                      },
+                      {
+                        type: "button",
+                        text: {
+                          type: "plain_text",
+                          text: "🚨 Emergency Rollback"
+                        },
+                        url: "${{ github.server_url }}/${{ github.repository }}/actions/workflows/emergency-rollback.yml"
+                      }
+                    ]
+                  },
+                  {
+                    type: "context",
+                    elements: [
+                      {
+                        type: "mrkdwn",
+                        text: "⚠️ *Immediate attention required. This is a critical system failure.*"
+                      }
+                    ]
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: ⚠️ Send high priority alert
+        if: needs.analyze-failure.outputs.severity == 'high'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          custom_payload: |
+            {
+              channel: "#ai-pipeline-alerts",
+              attachments: [{
+                color: "#FF6600",
+                blocks: [
+                  {
+                    type: "header",
+                    text: {
+                      type: "plain_text",
+                      text: "⚠️ HIGH PRIORITY WORKFLOW FAILURE"
+                    }
+                  },
+                  {
+                    type: "section",
+                    fields: [
+                      {
+                        type: "mrkdwn",
+                        text: "*Workflow:*\n${{ needs.analyze-failure.outputs.workflow-name }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Incident ID:*\n${{ needs.analyze-failure.outputs.incident-id }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Failure Type:*\n${{ needs.analyze-failure.outputs.failure-type }}"
+                      },
+                      {
+                        type: "mrkdwn",
+                        text: "*Auto Retry:*\n${{ needs.analyze-failure.outputs.auto-retry == 'true' && 'Yes' || 'No' }}"
+                      }
+                    ]
+                  },
+                  {
+                    type: "actions",
+                    elements: [
+                      {
+                        type: "button",
+                        text: {
+                          type: "plain_text",
+                          text: "🔍 View Logs"
+                        },
+                        url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}"
+                      },
+                      {
+                        type: "button",
+                        text: {
+                          type: "plain_text",
+                          text: "🔄 Retry Workflow"
+                        },
+                        url: "${{ github.server_url }}/${{ github.repository }}/actions"
+                      }
+                    ]
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: 📝 Send medium priority notification
+        if: needs.analyze-failure.outputs.severity == 'medium'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          custom_payload: |
+            {
+              channel: "#ai-pipeline-health",
+              attachments: [{
+                color: "#FFCC00",
+                blocks: [
+                  {
+                    type: "section",
+                    text: {
+                      type: "mrkdwn",
+                      text: "📝 *Workflow Failure Notification*\n\n*Workflow:* ${{ needs.analyze-failure.outputs.workflow-name }}\n*Incident:* ${{ needs.analyze-failure.outputs.incident-id }}\n*Type:* ${{ needs.analyze-failure.outputs.failure-type }}\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}|View Logs>"
+                    }
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Create GitHub issue for tracking
+  create-incident-issue:
+    name: 📝 Create Incident Issue
+    runs-on: ubuntu-latest
+    needs: analyze-failure
+    if: needs.analyze-failure.outputs.severity == 'critical' || needs.analyze-failure.outputs.severity == 'high'
+    
+    steps:
+      - name: 📝 Create incident tracking issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflowName = '${{ needs.analyze-failure.outputs.workflow-name }}';
+            const incidentId = '${{ needs.analyze-failure.outputs.incident-id }}';
+            const failureType = '${{ needs.analyze-failure.outputs.failure-type }}';
+            const severity = '${{ needs.analyze-failure.outputs.severity }}';
+            const runId = '${{ github.event.workflow_run.id }}';
+            const headSha = '${{ github.event.workflow_run.head_sha }}';
+            const branch = '${{ github.event.workflow_run.head_branch }}';
+            
+            const priorityEmoji = severity === 'critical' ? '🚨' : '⚠️';
+            const priorityLabel = severity === 'critical' ? '🚨 critical' : '⚠️ high-priority';
+            
+            const issueBody = `
+            # ${priorityEmoji} Workflow Failure Incident
+            
+            **Incident ID:** ${incidentId}
+            **Severity:** ${severity.toUpperCase()}
+            **Status:** 🔍 INVESTIGATING
+            
+            ## 📊 Incident Details
+            - **Workflow:** ${workflowName}
+            - **Failure Type:** ${failureType}
+            - **Run ID:** ${runId}
+            - **Branch:** ${branch}
+            - **Commit:** ${headSha.slice(0, 8)}
+            - **Time:** ${new Date().toISOString()}
+            
+            ## 🔗 Links
+            - [Failed Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${runId})
+            - [Repository Actions](${{ github.server_url }}/${{ github.repository }}/actions)
+            - [Emergency Rollback](${{ github.server_url }}/${{ github.repository }}/actions/workflows/emergency-rollback.yml)
+            - [Health Check](${{ github.server_url }}/${{ github.repository }}/actions/workflows/health-check.yml)
+            
+            ## 🚨 Immediate Actions Required
+            
+            ### For Critical Incidents:
+            1. **Assess Impact** - Determine if live data or services are affected
+            2. **Check Circuit Breaker** - Verify safety systems activated correctly
+            3. **Review Logs** - Analyze workflow logs for root cause
+            4. **Consider Rollback** - If data corruption suspected
+            5. **Notify Stakeholders** - Alert relevant team members
+            
+            ### For High Priority Incidents:
+            1. **Review Workflow Logs** - Check for obvious error patterns
+            2. **Test System Health** - Run health check workflow
+            3. **Retry if Appropriate** - If transient failure suspected
+            4. **Monitor for Patterns** - Check if this is recurring
+            
+            ## 🔧 Investigation Checklist
+            
+            - [ ] Reviewed workflow logs and identified error
+            - [ ] Checked system health status
+            - [ ] Verified API connectivity and credentials
+            - [ ] Confirmed database availability
+            - [ ] Checked circuit breaker state
+            - [ ] Analyzed recent changes or deployments
+            - [ ] Determined if manual intervention needed
+            - [ ] Documented root cause (when found)
+            
+            ## 📋 Resolution Actions
+            
+            **Root Cause:** _To be determined during investigation_
+            
+            **Resolution Steps:**
+            1. _Investigation in progress..._
+            
+            **Prevention Measures:**
+            - _To be determined based on root cause analysis_
+            
+            ## 📞 Escalation
+            
+            **Primary Contact:** @svetkars
+            **Escalation Path:** 
+            - Level 1: Team Lead
+            - Level 2: Engineering Manager  
+            - Level 3: CTO/VP Engineering
+            
+            ---
+            
+            ### 📊 Incident Timeline
+            - **${new Date().toLocaleTimeString()} UTC**: Incident detected and issue created
+            - **Status Updates**: _Will be added as investigation progresses_
+            
+            ---
+            🤖 *This incident was automatically detected and reported by the failure notification system.*
+            `;
+            
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `${priorityEmoji} ${incidentId}: ${workflowName} Failure`,
+              body: issueBody,
+              labels: [
+                priorityLabel,
+                '🚨 incident',
+                '🤖 automated',
+                '🔍 investigating'
+              ],
+              assignees: ['svetkars']
+            });
+            
+            console.log(`Created incident issue #${issue.data.number}`);
+            
+            // Set output for potential use in other jobs
+            core.setOutput('issue-number', issue.data.number);
+            core.setOutput('issue-url', issue.data.html_url);
+
+  # Auto-retry logic for certain failures
+  auto-retry:
+    name: 🔄 Auto-Retry Failed Workflow
+    runs-on: ubuntu-latest
+    needs: [analyze-failure, notify-failure]
+    if: needs.analyze-failure.outputs.auto-retry == 'true' && needs.analyze-failure.outputs.severity != 'critical'
+    
+    steps:
+      - name: ⏱️ Wait before retry
+        run: |
+          echo "⏱️ Waiting 5 minutes before auto-retry..."
+          sleep 300
+          
+      - name: 🔄 Trigger workflow retry
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflowName = '${{ needs.analyze-failure.outputs.workflow-name }}';
+            
+            // Map workflow names to workflow files
+            const workflowFiles = {
+              '🤖 Weekly AI Tools Data Refresh': 'data-refresh.yml',
+              '🏥 Daily Health Check': 'health-check.yml'
+            };
+            
+            const workflowFile = workflowFiles[workflowName];
+            
+            if (workflowFile) {
+              console.log(`Attempting auto-retry of ${workflowName}...`);
+              
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: workflowFile,
+                  ref: '${{ github.event.workflow_run.head_branch }}',
+                  inputs: {
+                    // Add retry context
+                    auto_retry: 'true',
+                    retry_reason: 'Auto-retry after failure - Incident ${{ needs.analyze-failure.outputs.incident-id }}'
+                  }
+                });
+                
+                console.log(`✅ Auto-retry triggered successfully`);
+                
+                // Notify about retry
+                const slackPayload = {
+                  channel: "#ai-pipeline-health",
+                  text: `🔄 Auto-retry triggered for ${workflowName}`,
+                  attachments: [{
+                    color: "#36a64f",
+                    text: `Incident ${{ needs.analyze-failure.outputs.incident-id }} - Auto-retry initiated after 5-minute delay`
+                  }]
+                };
+                
+                // Would send Slack notification here if webhook available
+                
+              } catch (error) {
+                console.error(`❌ Auto-retry failed: ${error.message}`);
+                throw error;
+              }
+            } else {
+              console.log(`⚠️ No auto-retry configured for workflow: ${workflowName}`);
+            }
+
+  # Final status and summary
+  incident-summary:
+    name: 📊 Incident Summary
+    runs-on: ubuntu-latest
+    needs: [analyze-failure, notify-failure, create-incident-issue, auto-retry]
+    if: always()
+    
+    steps:
+      - name: 📊 Generate incident summary
+        run: |
+          echo "🚨 Failure Notification Workflow Summary"
+          echo "======================================="
+          echo "Incident ID: ${{ needs.analyze-failure.outputs.incident-id }}"
+          echo "Workflow: ${{ needs.analyze-failure.outputs.workflow-name }}"
+          echo "Failure Type: ${{ needs.analyze-failure.outputs.failure-type }}"
+          echo "Severity: ${{ needs.analyze-failure.outputs.severity }}"
+          echo "Auto-Retry: ${{ needs.analyze-failure.outputs.auto-retry }}"
+          echo ""
+          echo "Actions Taken:"
+          echo "- Analysis: ${{ needs.analyze-failure.result }}"
+          echo "- Notification: ${{ needs.notify-failure.result }}"
+          echo "- Issue Creation: ${{ needs.create-incident-issue.result }}"
+          echo "- Auto-Retry: ${{ needs.auto-retry.result }}"
+          echo "======================================="
+          
+          # Create step summary
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🚨 Incident Response Summary
+          
+          **Incident ID:** ${{ needs.analyze-failure.outputs.incident-id }}
+          **Workflow:** ${{ needs.analyze-failure.outputs.workflow-name }}
+          **Severity:** ${{ needs.analyze-failure.outputs.severity | upper }}
+          
+          ### Actions Completed:
+          - ✅ Failure analysis and categorization
+          - ✅ Slack notifications sent
+          - ${{ needs.create-incident-issue.result == 'success' && '✅' || '❌' }} GitHub issue created
+          - ${{ needs.auto-retry.result == 'success' && '✅' || needs.auto-retry.result == 'skipped' && '⏭️' || '❌' }} Auto-retry ${{ needs.auto-retry.result }}
+          
+          ### Next Steps:
+          1. Review incident issue for tracking
+          2. Investigate root cause 
+          3. Monitor auto-retry results (if applicable)
+          4. Update incident status as resolved
+          EOF

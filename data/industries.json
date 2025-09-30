@@ -1,0 +1,56 @@
+[
+  {
+    "id": "ecommerce",
+    "name": "E-commerce",
+    "slug": "ecommerce",
+    "icon": "🛒"
+  },
+  {
+    "id": "saas",
+    "name": "SaaS",
+    "slug": "saas",
+    "icon": "💻"
+  },
+  {
+    "id": "all",
+    "name": "All Industries",
+    "slug": "all",
+    "icon": "🌐"
+  },
+  {
+    "id": "home_services",
+    "name": "Home Services",
+    "slug": "home-services",
+    "icon": "🔧"
+  },
+  {
+    "id": "construction",
+    "name": "Construction",
+    "slug": "construction",
+    "icon": "🏗️"
+  },
+  {
+    "id": "legal",
+    "name": "Legal Services",
+    "slug": "legal",
+    "icon": "⚖️"
+  },
+  {
+    "id": "healthcare",
+    "name": "Healthcare",
+    "slug": "healthcare",
+    "icon": "🏥"
+  },
+  {
+    "id": "restaurants",
+    "name": "Restaurants",
+    "slug": "restaurants",
+    "icon": "🍽️"
+  },
+  {
+    "id": "veterinary",
+    "name": "Veterinary",
+    "slug": "veterinary",
+    "icon": "🐾"
+  }
+]

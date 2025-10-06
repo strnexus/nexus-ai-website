@@ -1,0 +1,317 @@
+{
+  "timestamp": "2025-10-04T22:55:20.196Z",
+  "expansion": "Premium Route",
+  "qualifiedTools": [
+    {
+      "id": 21,
+      "name": "PawHealth Monitor",
+      "url": "https://pawhealth.ai",
+      "category": "Pet Care & Services",
+      "subcategory": "Pet Training",
+      "description": "AI wearable health monitoring for pets",
+      "keyFeatures": "AI-powered automation, Real-time analytics, Industry-specific workflows",
+      "startingPrice": "$49/month",
+      "easeOfUse": 8,
+      "setupTime": "1-2 hours",
+      "integrations": "Veterinary management systems, Pet insurance platforms, Scheduling software",
+      "useCase": "Specialized pet care & services businesses using AI for ai wearable health monitoring for pets",
+      "industryROI": "200-400%",
+      "specialization": "AI wearable health monitoring for pets",
+      "specializationScore": 7.5,
+      "founded": 2024,
+      "isAINative": true,
+      "urlStatus": "valid"
+    },
+    {
+      "id": 22,
+      "name": "SpaFlow AI",
+      "url": "https://spaflow-ai.com",
+      "category": "Beauty & Wellness",
+      "subcategory": "Wellness Coaching",
+      "description": "AI spa treatment scheduling and client wellness tracking",
+      "keyFeatures": "AI-powered automation, Real-time analytics, Industry-specific workflows",
+      "startingPrice": "$49/month",
+      "easeOfUse": 8,
+      "setupTime": "1-2 hours",
+      "integrations": "Salon management software, Appointment booking, Payment systems",
+      "useCase": "Specialized beauty & wellness businesses using AI for ai spa treatment scheduling and client wellness tracking",
+      "industryROI": "180-320%",
+      "specialization": "AI spa treatment scheduling and client wellness tracking",
+      "specializationScore": 7,
+      "founded": 2024,
+      "isAINative": true,
+      "urlStatus": "valid"
+    },
+    {
+      "id": 23,
+      "name": "RadiologyAI Pro",
+      "url": "https://radiology-ai.com",
+      "category": "Healthcare Specialists",
+      "subcategory": "Diagnostic Services",
+      "description": "AI medical imaging analysis and diagnosis assistance",
+      "keyFeatures": "AI-powered automation, Real-time analytics, Industry-specific workflows",
+      "startingPrice": "$49/month",
+      "easeOfUse": 8,
+      "setupTime": "1-2 hours",
+      "integrations": "Electronic health records, Medical imaging systems, Practice management",
+      "useCase": "Specialized healthcare specialists businesses using AI for ai medical imaging analysis and diagnosis assistance",
+      "industryROI": "250-450%",
+      "specialization": "AI medical imaging analysis and diagnosis assistance",
+      "specializationScore": 7,
+      "founded": 2024,
+      "isAINative": true,
+      "urlStatus": "valid"
+    },
+    {
+      "id": 24,
+      "name": "NursingAI Assistant",
+      "url": "https://nursing-ai.com",
+      "category": "Healthcare Specialists",
+      "subcategory": "Diagnostic Services",
+      "description": "AI nursing care planning and patient monitoring",
+      "keyFeatures": "AI-powered automation, Real-time analytics, Industry-specific workflows",
+      "startingPrice": "$49/month",
+      "easeOfUse": 8,
+      "setupTime": "1-2 hours",
+      "integrations": "Electronic health records, Medical imaging systems, Practice management",
+      "useCase": "Specialized healthcare specialists businesses using AI for ai nursing care planning and patient monitoring",
+      "industryROI": "250-450%",
+      "specialization": "AI nursing care planning and patient monitoring",
+      "specializationScore": 7,
+      "founded": 2024,
+      "isAINative": true,
+      "urlStatus": "valid"
+    }
+  ],
+  "averageScore": "7.1",
+  "industryProgress": {
+    "Pet Care & Services": {
+      "current": 5,
+      "target": 9,
+      "needed": 4,
+      "found": 1
+    },
+    "Home Services & Contractors": {
+      "current": 3,
+      "target": 9,
+      "needed": 6,
+      "found": 0
+    },
+    "Beauty & Wellness": {
+      "current": 3,
+      "target": 8,
+      "needed": 5,
+      "found": 1
+    },
+    "Food & Hospitality": {
+      "current": 3,
+      "target": 8,
+      "needed": 5,
+      "found": 0
+    },
+    "Healthcare Specialists": {
+      "current": 3,
+      "target": 8,
+      "needed": 5,
+      "found": 2
+    },
+    "Professional Services": {
+      "current": 3,
+      "target": 8,
+      "needed": 5,
+      "found": 0
+    }
+  },
+  "rejectedTools": [
+    {
+      "name": "PetVet AI Pro",
+      "score": 6.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "GroomGenius AI",
+      "score": 6,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "VetDiag AI",
+      "score": 5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "PetBehavior AI",
+      "score": 5.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "VetRecord AI",
+      "score": 5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "HVAC AI Pro",
+      "score": 5.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "CarpenterBot AI",
+      "score": 4.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "PaintPro AI",
+      "score": 1.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "LandscapeAI Design",
+      "score": 4,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "HandymanAI Pro",
+      "score": 5.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "FlooringAI Expert",
+      "score": 5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "WindowAI Pro",
+      "score": 4,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "TileAI Master",
+      "score": 4,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "SkinAnalysis AI",
+      "score": 6,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "HairColor AI Pro",
+      "score": 5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "MakeupAI Artist",
+      "score": 4.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "EyebrowAI Pro",
+      "score": 2,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "WellnessAI Coach",
+      "score": 6,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "BeautyBot Scheduler",
+      "score": 4.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "KitchenAI Pro",
+      "score": 4.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "RecipeAI Generator",
+      "score": 5.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "RestaurantAI Pro",
+      "score": 5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "CateringAI Planner",
+      "score": 4.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "BarAI Mixologist",
+      "score": 2,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "FoodSafety AI",
+      "score": 5.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "HotelAI Concierge",
+      "score": 4,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "DermatologyAI",
+      "score": 5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "CardiologyAI Pro",
+      "score": 5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "TherapyAI Coach",
+      "score": 5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "PharmacyAI Pro",
+      "score": 2,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "MedRecordAI",
+      "score": 6.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "ConsultingAI Pro",
+      "score": 6,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "AccountingAI Pro",
+      "score": 6,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "LegalAI Research",
+      "score": 5.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "HR AI Pro",
+      "score": 3.5,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "MarketingAI Pro",
+      "score": 6,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "InsuranceAI Pro",
+      "score": 2,
+      "reason": "Below 7.0 threshold"
+    },
+    {
+      "name": "RealEstateAI Pro",
+      "score": 4.5,
+      "reason": "Below 7.0 threshold"
+    }
+  ]
+}

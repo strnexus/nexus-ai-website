@@ -1,0 +1,1412 @@
+[
+  {
+    "id": "9e2c8487",
+    "name": "Tidio",
+    "slug": "tidio",
+    "description": "AI chatbot providing 24/7 customer support with easy SMB setup",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "customer_service",
+        "name": "Customer Service & Support",
+        "slug": "customer-service",
+        "icon": "🎧",
+        "color": "#3B82F6"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "ecommerce",
+        "name": "E-commerce",
+        "slug": "ecommerce",
+        "icon": "🛒"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "freemium",
+    "pricing_details": {
+      "free_tier": true,
+      "starting_price": 20,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "15 minutes",
+    "technical_complexity": "no_code",
+    "website_url": "https://tidio.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI chatbot",
+      "Live chat",
+      "Multichannel support",
+      "76% resolution rate"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.567Z",
+    "updated_at": "2025-09-22T22:03:22.567Z",
+    "source": "manual",
+    "meta_description": "AI chatbot providing 24/7 customer support with easy SMB setup",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "822b142d",
+    "name": "Intercom AI",
+    "slug": "intercom-ai",
+    "description": "Conversational support platform with 67% automated resolution rate",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "customer_service",
+        "name": "Customer Service & Support",
+        "slug": "customer-service",
+        "icon": "🎧",
+        "color": "#3B82F6"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "ecommerce",
+        "name": "E-commerce",
+        "slug": "ecommerce",
+        "icon": "🛒"
+      },
+      {
+        "id": "saas",
+        "name": "SaaS",
+        "slug": "saas",
+        "icon": "💻"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 74,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "2 hours",
+    "technical_complexity": "low_code",
+    "website_url": "https://intercom.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI Resolution Bot",
+      "Smart routing",
+      "Automated responses",
+      "Customer insights"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.567Z",
+    "updated_at": "2025-09-22T22:03:22.567Z",
+    "source": "manual",
+    "meta_description": "Conversational support platform with 67% automated resolution rate",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "222dcd03",
+    "name": "Zapier",
+    "slug": "zapier",
+    "description": "Automation platform connecting apps to streamline business workflows",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "operations",
+        "name": "Operations & Productivity",
+        "slug": "operations",
+        "icon": "⚡",
+        "color": "#10B981"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "all",
+        "name": "All Industries",
+        "slug": "all",
+        "icon": "🌐"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "freemium",
+    "pricing_details": {
+      "free_tier": true,
+      "starting_price": 19.99,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 3,
+    "setup_time": "30 minutes",
+    "technical_complexity": "no_code",
+    "website_url": "https://zapier.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "5000+ app integrations",
+      "Automated workflows",
+      "No-code automation"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.567Z",
+    "updated_at": "2025-09-22T22:03:22.567Z",
+    "source": "manual",
+    "meta_description": "Automation platform connecting apps to streamline business workflows",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "b6052994",
+    "name": "Notion AI",
+    "slug": "notion-ai",
+    "description": "All-in-one workspace with AI for notes, docs, and project management",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "operations",
+        "name": "Operations & Productivity",
+        "slug": "operations",
+        "icon": "⚡",
+        "color": "#10B981"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "all",
+        "name": "All Industries",
+        "slug": "all",
+        "icon": "🌐"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 8,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 3,
+    "setup_time": "1 hour",
+    "technical_complexity": "low_code",
+    "website_url": "https://notion.so",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI writing assistant",
+      "Database management",
+      "Wiki creation",
+      "Template generation"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.567Z",
+    "updated_at": "2025-09-22T22:03:22.567Z",
+    "source": "manual",
+    "meta_description": "All-in-one workspace with AI for notes, docs, and project management",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "e874cded",
+    "name": "ChatGPT Business",
+    "slug": "chatgpt-business",
+    "description": "Enterprise ChatGPT with enhanced features for business use",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "operations",
+        "name": "Operations & Productivity",
+        "slug": "operations",
+        "icon": "⚡",
+        "color": "#10B981"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "all",
+        "name": "All Industries",
+        "slug": "all",
+        "icon": "🌐"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 25,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 1,
+    "setup_time": "2 minutes",
+    "technical_complexity": "no_code",
+    "website_url": "https://openai.com/chatgpt",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "Advanced AI conversations",
+      "Custom instructions",
+      "Data analysis",
+      "Priority access"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.567Z",
+    "updated_at": "2025-09-22T22:03:22.567Z",
+    "source": "manual",
+    "meta_description": "Enterprise ChatGPT with enhanced features for business use",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "22b7d556",
+    "name": "ServiceTitan AI",
+    "slug": "servicetitan-ai",
+    "description": "Comprehensive field service management with AI-powered operations",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "operations",
+        "name": "Operations & Productivity",
+        "slug": "operations",
+        "icon": "⚡",
+        "color": "#10B981"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "home_services",
+        "name": "Home Services",
+        "slug": "home-services",
+        "icon": "🔧"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "custom",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 200,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": true
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 3,
+    "setup_time": "2 weeks",
+    "technical_complexity": "technical",
+    "website_url": "https://servicetitan.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI scheduling optimization",
+      "Predictive maintenance",
+      "Route optimization"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.567Z",
+    "updated_at": "2025-09-22T22:03:22.567Z",
+    "source": "manual",
+    "meta_description": "Comprehensive field service management with AI-powered operations",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "afb182e2",
+    "name": "Housecall Pro AI",
+    "slug": "housecall-pro-ai",
+    "description": "Field service management with AI-powered customer insights",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "operations",
+        "name": "Operations & Productivity",
+        "slug": "operations",
+        "icon": "⚡",
+        "color": "#10B981"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "home_services",
+        "name": "Home Services",
+        "slug": "home-services",
+        "icon": "🔧"
+      },
+      {
+        "id": "construction",
+        "name": "Construction",
+        "slug": "construction",
+        "icon": "🏗️"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 49,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "1 week",
+    "technical_complexity": "technical",
+    "website_url": "https://housecallpro.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI customer matching",
+      "Automated scheduling",
+      "Smart dispatching",
+      "Predictive billing"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "Field service management with AI-powered customer insights",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "655b99c2",
+    "name": "LeadTruffle AI",
+    "slug": "leadtruffle-ai",
+    "description": "AI platform for North American home services lead capture",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "marketing",
+        "name": "Marketing & Content",
+        "slug": "marketing",
+        "icon": "📣",
+        "color": "#EF4444"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "home_services",
+        "name": "Home Services",
+        "slug": "home-services",
+        "icon": "🔧"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 97,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 1,
+    "setup_time": "30 minutes",
+    "technical_complexity": "no_code",
+    "website_url": "https://leadtruffle.co",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "SMS-first AI conversations",
+      "Missed call automation",
+      "Emergency handling"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "AI platform for North American home services lead capture",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "459ae058",
+    "name": "HubSpot CRM AI",
+    "slug": "hubspot-crm-ai",
+    "description": "Free CRM with AI-powered marketing automation and sales intelligence",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "sales_crm",
+        "name": "Sales & CRM",
+        "slug": "sales-crm",
+        "icon": "📊",
+        "color": "#F59E0B"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "all",
+        "name": "All Industries",
+        "slug": "all",
+        "icon": "🌐"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "freemium",
+    "pricing_details": {
+      "free_tier": true,
+      "starting_price": 15,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "45 minutes",
+    "technical_complexity": "no_code",
+    "website_url": "https://hubspot.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI email writer",
+      "Breeze Copilot",
+      "Lead scoring",
+      "Workflow automation"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "Free CRM with AI-powered marketing automation and sales intelligence",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "129c85fa",
+    "name": "Pipedrive AI",
+    "slug": "pipedrive-ai",
+    "description": "Visual CRM with AI-powered sales insights and automation",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "sales_crm",
+        "name": "Sales & CRM",
+        "slug": "sales-crm",
+        "icon": "📊",
+        "color": "#F59E0B"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "all",
+        "name": "All Industries",
+        "slug": "all",
+        "icon": "🌐"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 14.9,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "45 minutes",
+    "technical_complexity": "no_code",
+    "website_url": "https://pipedrive.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI sales assistant",
+      "Deal predictions",
+      "Lead scoring",
+      "Pipeline automation"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "Visual CRM with AI-powered sales insights and automation",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "cb000942",
+    "name": "Clio Duo AI",
+    "slug": "clio-duo-ai",
+    "description": "Legal practice management with AI-powered document automation",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "operations",
+        "name": "Operations & Productivity",
+        "slug": "operations",
+        "icon": "⚡",
+        "color": "#10B981"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "legal",
+        "name": "Legal Services",
+        "slug": "legal",
+        "icon": "⚖️"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 89,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "1 week",
+    "technical_complexity": "technical",
+    "website_url": "https://clio.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI document generation",
+      "Task automation",
+      "Case insights",
+      "Billing optimization"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "Legal practice management with AI-powered document automation",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "4ee7c37e",
+    "name": "Harvey AI",
+    "slug": "harvey-ai",
+    "description": "Professional AI assistant for legal research and document analysis",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "operations",
+        "name": "Operations & Productivity",
+        "slug": "operations",
+        "icon": "⚡",
+        "color": "#10B981"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "legal",
+        "name": "Legal Services",
+        "slug": "legal",
+        "icon": "⚖️"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 150,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 3,
+    "setup_time": "2 weeks",
+    "technical_complexity": "technical",
+    "website_url": "https://harvey.ai",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI legal research",
+      "Contract analysis",
+      "Document drafting",
+      "Compliance checking"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "Professional AI assistant for legal research and document analysis",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "13175635",
+    "name": "CERTIFY Health AI",
+    "slug": "certify-health-ai",
+    "description": "Medical practice management with AI-powered patient engagement",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "hr",
+        "name": "Human Resources",
+        "slug": "human-resources",
+        "icon": "👥",
+        "color": "#06B6D4"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "healthcare",
+        "name": "Healthcare",
+        "slug": "healthcare",
+        "icon": "🏥"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 99,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "1 week",
+    "technical_complexity": "technical",
+    "website_url": "https://certifyhealth.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI patient verification",
+      "Automated check-in",
+      "Insurance verification"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "Medical practice management with AI-powered patient engagement",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "32fb7293",
+    "name": "Freed AI Scribe",
+    "slug": "freed-ai-scribe",
+    "description": "AI medical scribe helping physicians close charts 80% faster",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "operations",
+        "name": "Operations & Productivity",
+        "slug": "operations",
+        "icon": "⚡",
+        "color": "#10B981"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "healthcare",
+        "name": "Healthcare",
+        "slug": "healthcare",
+        "icon": "🏥"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 99,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 1,
+    "setup_time": "1 hour",
+    "technical_complexity": "low_code",
+    "website_url": "https://freed.ai",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI medical scribe",
+      "Automatic note generation",
+      "Clinical documentation"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "AI medical scribe helping physicians close charts 80% faster",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "479fe28b",
+    "name": "Toast AI",
+    "slug": "toast-ai",
+    "description": "Restaurant POS system with AI-powered operations optimization",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "ecommerce",
+        "name": "E-commerce & Retail",
+        "slug": "ecommerce",
+        "icon": "🛒",
+        "color": "#F97316"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "restaurants",
+        "name": "Restaurants",
+        "slug": "restaurants",
+        "icon": "🍽️"
+      },
+      {
+        "id": "restaurants",
+        "name": "Restaurants",
+        "slug": "restaurants",
+        "icon": "🍽️"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 69,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "4 hours",
+    "technical_complexity": "low_code",
+    "website_url": "https://toasttab.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI order predictions",
+      "Inventory optimization",
+      "Staff scheduling",
+      "Menu analytics"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "Restaurant POS system with AI-powered operations optimization",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "a6e9c5ce",
+    "name": "Copy.ai",
+    "slug": "copyai",
+    "description": "GTM AI platform for content creation and sales processes",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "marketing",
+        "name": "Marketing & Content",
+        "slug": "marketing",
+        "icon": "📣",
+        "color": "#EF4444"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "all",
+        "name": "All Industries",
+        "slug": "all",
+        "icon": "🌐"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "freemium",
+    "pricing_details": {
+      "free_tier": true,
+      "starting_price": 36,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "10 minutes",
+    "technical_complexity": "no_code",
+    "website_url": "https://copy.ai",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "Blog posts",
+      "social media content",
+      "GTM automation",
+      "CRM enrichment"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "GTM AI platform for content creation and sales processes",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "dd20439f",
+    "name": "Jasper AI",
+    "slug": "jasper-ai",
+    "description": "AI writing assistant focused on marketing content and brand consistency",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "marketing",
+        "name": "Marketing & Content",
+        "slug": "marketing",
+        "icon": "📣",
+        "color": "#EF4444"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "all",
+        "name": "All Industries",
+        "slug": "all",
+        "icon": "🌐"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 59,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "30 minutes",
+    "technical_complexity": "no_code",
+    "website_url": "https://jasper.ai",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "Brand voice training",
+      "Marketing templates",
+      "SEO optimization",
+      "Team collaboration"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "AI writing assistant focused on marketing content and brand consistency",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "ea021009",
+    "name": "QuickBooks AI",
+    "slug": "quickbooks-ai",
+    "description": "Leading accounting software with AI capabilities for small businesses",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "finance",
+        "name": "Finance & Accounting",
+        "slug": "finance",
+        "icon": "💰",
+        "color": "#8B5CF6"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "all",
+        "name": "All Industries",
+        "slug": "all",
+        "icon": "🌐"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 35,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "30 minutes",
+    "technical_complexity": "no_code",
+    "website_url": "https://quickbooks.intuit.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI transaction categorization",
+      "Invoice automation",
+      "Expense tracking"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "Leading accounting software with AI capabilities for small businesses",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "a206cbe3",
+    "name": "Xero AI",
+    "slug": "xero-ai",
+    "description": "Cloud accounting software with AI automation for growing startups",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "finance",
+        "name": "Finance & Accounting",
+        "slug": "finance",
+        "icon": "💰",
+        "color": "#8B5CF6"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "all",
+        "name": "All Industries",
+        "slug": "all",
+        "icon": "🌐"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 15,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "1 hour",
+    "technical_complexity": "low_code",
+    "website_url": "https://xero.com",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI bank reconciliation",
+      "Invoice automation",
+      "Expense categorization"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "Cloud accounting software with AI automation for growing startups",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  },
+  {
+    "id": "36036e5c",
+    "name": "CoVet AI",
+    "slug": "covet-ai",
+    "description": "AI-powered veterinary documentation for efficient SOAP note creation",
+    "tagline": null,
+    "categories": [
+      {
+        "id": "operations",
+        "name": "Operations & Productivity",
+        "slug": "operations",
+        "icon": "⚡",
+        "color": "#10B981"
+      }
+    ],
+    "industry_focus": [
+      {
+        "id": "veterinary",
+        "name": "Veterinary",
+        "slug": "veterinary",
+        "icon": "🐾"
+      }
+    ],
+    "business_size": [
+      "small"
+    ],
+    "use_cases": [],
+    "pricing_model": "subscription",
+    "pricing_details": {
+      "free_tier": false,
+      "starting_price": 79,
+      "starting_price_currency": "USD",
+      "starting_price_period": "month",
+      "custom_pricing": false
+    },
+    "roi_metrics": [
+      {
+        "metric": "ROI Potential",
+        "value": "High",
+        "timeframe": null,
+        "source": "manual_entry"
+      }
+    ],
+    "ease_of_use": 2,
+    "setup_time": "1 hour",
+    "technical_complexity": "low_code",
+    "website_url": "https://co.vet",
+    "logo_url": null,
+    "screenshot_url": null,
+    "key_features": [
+      "AI SOAP note generation",
+      "Real-time documentation",
+      "Medical record optimization"
+    ],
+    "integrations": [],
+    "ai_capabilities": [
+      "automation"
+    ],
+    "status": "active",
+    "rating": null,
+    "review_count": null,
+    "created_at": "2025-09-22T22:03:22.568Z",
+    "updated_at": "2025-09-22T22:03:22.568Z",
+    "source": "manual",
+    "meta_description": "AI-powered veterinary documentation for efficient SOAP note creation",
+    "keywords": [],
+    "popularity_score": null,
+    "trending_score": null
+  }
+]
